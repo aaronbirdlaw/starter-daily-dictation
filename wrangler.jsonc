@@ -9,5 +9,16 @@
       "database_name": "starter-daily-dictation-sync",
       "database_id": "43e8f482-b591-491d-aee2-b02b0af6551d"
     }
-  ]
+  ],
+  "env": {
+    "preview": {
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "starter-daily-dictation-sync-preview",
+          "database_id": "82e36d32-0c2a-4cf2-891b-8ef90befb297"
+        }
+      ]
+    }
+  }
 }
