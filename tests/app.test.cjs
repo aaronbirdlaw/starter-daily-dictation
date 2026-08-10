@@ -14,6 +14,7 @@ async function load(seed) {
     runScripts: 'dangerously',
     beforeParse(window) {
       window.confirm = () => true;
+      window.prompt = () => 'RESET';
       if (seed) {
         window.localStorage.setItem('starter-dictation-v2', JSON.stringify(seed));
       }
@@ -36,6 +37,8 @@ function state(dom) {
   assert(current.days[today].reviewIds.length === 0, 'fresh plan should have no due review words');
   assert(fresh.window.document.querySelectorAll('#rows input').length === 0, 'today should not require keyboard input');
   assert(fresh.window.document.querySelectorAll('#rows .word').length === 5, 'today should display each word for parents to read');
+  assert(fresh.window.document.querySelector('#syncCode'), 'family sync code field should be available');
+  assert(fresh.window.document.querySelector('#createSync'), 'family sync create action should be available');
 
   fresh.window.document.querySelector('[data-tab="progress"]').click();
   fresh.window.document.querySelector('#newCount').value = '3';

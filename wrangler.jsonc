@@ -1,0 +1,13 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "starter-daily-dictation",
+  "pages_build_output_dir": ".",
+  "compatibility_date": "2026-08-10",
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "starter-daily-dictation-sync",
+      "database_id": "43e8f482-b591-491d-aee2-b02b0af6551d"
+    }
+  ]
+}

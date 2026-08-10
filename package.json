@@ -4,7 +4,7 @@
   "private": true,
   "description": "Cambridge Pre A1 Starters daily dictation with spaced repetition",
   "scripts": {
-    "test": "node tests/app.test.cjs"
+    "test": "node tests/app.test.cjs && node tests/sync-core.test.mjs"
   },
   "devDependencies": {
     "jsdom": "26.1.0"
