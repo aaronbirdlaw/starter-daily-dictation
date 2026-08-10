@@ -1,0 +1,12 @@
+{
+  "name": "starter-daily-dictation",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Cambridge Pre A1 Starters daily dictation with spaced repetition",
+  "scripts": {
+    "test": "node tests/app.test.cjs"
+  },
+  "devDependencies": {
+    "jsdom": "26.1.0"
+  }
+}
