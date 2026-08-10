@@ -1,0 +1,6 @@
+CREATE TABLE IF NOT EXISTS family_sync (
+  code_hash TEXT PRIMARY KEY,
+  state_json TEXT NOT NULL,
+  revision INTEGER NOT NULL DEFAULT 1,
+  updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);

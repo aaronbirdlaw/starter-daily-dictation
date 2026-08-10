@@ -45,6 +45,10 @@ vercel
 vercel --prod
 ```
 
+## 家庭同步部署配置
+
+家庭同步使用 Cloudflare Pages Functions 与 D1。项目已包含 `wrangler.jsonc` 和 `schema.sql`；Pages 项目应绑定名为 `DB` 的 D1 数据库 `starter-daily-dictation-sync`。部署后，两台设备可通过相同的家庭同步码共享学习记录。
+
 ## 数据说明
 
 - 数据仅保存在访问设备的浏览器中，不会跨设备同步。
