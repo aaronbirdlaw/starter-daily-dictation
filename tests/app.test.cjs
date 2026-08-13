@@ -8,15 +8,19 @@ function assert(ok, message) {
   if (!ok) throw new Error(message);
 }
 
-async function load(seed) {
+async function load(seed, syncSeed, fetchHandler) {
   const dom = new JSDOM(html, {
-    url: 'https://starter-daily-dictation.vercel.app',
+    url: 'https://starter-daily-dictation.pages.dev',
     runScripts: 'dangerously',
     beforeParse(window) {
       window.confirm = () => true;
       window.prompt = () => 'RESET';
+      if (fetchHandler) window.fetch = fetchHandler;
       if (seed) {
         window.localStorage.setItem('starter-dictation-v2', JSON.stringify(seed));
+      }
+      if (syncSeed) {
+        window.localStorage.setItem('starter-dictation-sync-v1', JSON.stringify(syncSeed));
       }
     }
   });
@@ -29,10 +33,12 @@ function state(dom) {
 }
 
 (async () => {
+  const { mergeState } = await import('../functions/lib/sync-core.mjs');
   const fresh = await load();
   let current = state(fresh);
   const today = Object.keys(current.days)[0];
-  assert(current.version === 3, 'fresh schema should be v3');
+  assert(current.version === 4, 'fresh schema should be v4');
+  assert(current.sync.generation === 0, 'fresh state should start at sync generation 0');
   assert(current.days[today].newIds.length === 5, 'fresh plan should contain 5 new words');
   assert(current.days[today].reviewIds.length === 0, 'fresh plan should have no due review words');
   assert(fresh.window.document.querySelectorAll('#rows input').length === 0, 'today should not require keyboard input');
@@ -89,14 +95,42 @@ function state(dom) {
     startedAt: '2020-01-01'
   });
   const migrated = state(legacy);
-  assert(migrated.version === 3 && migrated.memory[9], 'legacy completed words should migrate');
+  assert(migrated.version === 4 && migrated.memory[9], 'legacy completed words should migrate to v4');
+
+  const localBeforeRefresh = {
+    version: 3,
+    days: { '2026-08-10': { date: '2026-08-10', newIds: [1, 2], reviewIds: [], doneIds: [2], completed: false } },
+    memory: { 2: { learnedAt: '2026-08-10', stage: 0, lastReviewed: '2026-08-10', nextReview: '2026-08-11' } },
+    settings: { newCount: 5, reviewCount: 5 },
+    startedAt: '2026-08-10'
+  };
+  const cloudBeforeRefresh = {
+    version: 3,
+    days: { '2026-08-10': { date: '2026-08-10', newIds: [1, 2], reviewIds: [], doneIds: [1], completed: false } },
+    memory: { 1: { learnedAt: '2026-08-10', stage: 0, lastReviewed: '2026-08-10', nextReview: '2026-08-11' } },
+    settings: { newCount: 5, reviewCount: 5 },
+    startedAt: '2026-08-10'
+  };
+  let refreshOperation;
+  const refreshed = await load(localBeforeRefresh, { enabled: true, code: 'family-code', deviceId: 'wife-phone' }, async (_url, options) => {
+    const request = JSON.parse(options.body);
+    refreshOperation = request.operation;
+    const merged = mergeState(cloudBeforeRefresh, request.state, request.date);
+    return { ok: true, status: 200, json: async () => ({ state: merged, revision: 2, backupComplete: true, importVerified: true }) };
+  });
+  await new Promise(resolve => setTimeout(resolve, 20));
+  const afterRefresh = state(refreshed);
+  assert(refreshOperation === 'import', 'first upgraded refresh should back up and import instead of read-overwriting local state');
+  assert(afterRefresh.days['2026-08-10'].doneIds.includes(1) && afterRefresh.days['2026-08-10'].doneIds.includes(2), 'refresh sync should retain both phones completions');
+  assert(JSON.parse(refreshed.window.localStorage.getItem('starter-dictation-sync-v1')).backupComplete, 'verified import should be remembered per browser');
 
   fresh.window.document.querySelector('#reset').click();
   current = state(fresh);
   assert(current.settings.newCount === 5 && current.settings.reviewCount === 5, 'reset should restore defaults');
   assert(Object.keys(current.memory).length === 0, 'reset should clear learned words and review plan');
+  assert(current.sync.generation === 1, 'reset should advance sync generation');
 
-  console.log('PASS: fresh plan, settings, Ebbinghaus review, legacy migration, reset');
+  console.log('PASS: fresh plan, settings, Ebbinghaus review, v4 migration, reset generation');
 })().catch(error => {
   console.error(error);
   process.exit(1);
