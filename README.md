@@ -2,7 +2,7 @@
 
 一个面向 Cambridge English Pre A1 Starters 词汇的每日听写网页。网站会安排每日新词，并按照艾宾浩斯间隔复习到期词。
 
-线上地址：<https://starter-daily-dictation.vercel.app>
+线上地址：<https://starter-daily-dictation.pages.dev>
 
 ## 功能
 
@@ -38,21 +38,21 @@ npm test
 
 ## 部署
 
-项目使用 `vercel.json` 配置，可直接导入 Vercel 或使用 Vercel CLI 部署：
-
-```bash
-vercel
-vercel --prod
-```
+项目部署在 Cloudflare Pages，无需购买域名或服务器：<https://starter-daily-dictation.pages.dev>。
 
 ## 家庭同步部署配置
 
 家庭同步使用 Cloudflare Pages Functions 与 D1。项目已包含 `wrangler.jsonc` 和 `schema.sql`；Pages 项目应绑定名为 `DB` 的 D1 数据库 `starter-daily-dictation-sync`。部署后，两台设备可通过相同的家庭同步码共享学习记录。
 
+- 首次启用或旧版本升级时，服务端先把当前 `starter-dictation-v2` 原始状态保存到 `family_sync_backups`，再合并并校验导入结果。
+- 页面刷新、恢复前台和重新联网都会“上传并合并后再返回”，不会直接用云端快照覆盖本机未上传记录。
+- 冲突会保留两边已完成单词；设置按最后修改时间处理。
+- Reset 使用递增的同步世代，防止另一台离线设备把旧进度恢复回来。
+
 ## 数据说明
 
-- 数据仅保存在访问设备的浏览器中，不会跨设备同步。
+- 未启用家庭同步时，数据仅保存在访问设备的浏览器中；启用后同时保留本机缓存和 D1 云端记录。
 - 当前存储键为 `starter-dictation-v2`。
-- 数据结构版本为 `3`；修改数据结构时必须保留向后迁移逻辑。
+- 数据结构版本为 `4`，兼容迁移版本 3 和更早记录。
 
 进一步的产品规则见 [PROJECT_CONTEXT.md](PROJECT_CONTEXT.md)，Codex 开发约束见 [AGENTS.md](AGENTS.md)。
