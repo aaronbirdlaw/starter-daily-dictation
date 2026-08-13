@@ -1,4 +1,4 @@
-import { codeHash, freshState, mergeState, normalizeState } from '../lib/sync-core.mjs';
+import { codeHash, containsState, freshState, mergeState, normalizeState } from '../lib/sync-core.mjs';
 
 const json = (value, status = 200) => new Response(JSON.stringify(value), {
   status,
@@ -17,22 +17,38 @@ export async function onRequestPost({ request, env }) {
   const hash = await codeHash(code);
   const operation = body.operation || 'read';
   const date = String(body.date || today());
+  const deviceId = String(body.deviceId || 'unknown').slice(0, 100);
   const row = await env.DB.prepare('SELECT state_json, revision FROM family_sync WHERE code_hash = ?').bind(hash).first();
+
+  const backup = async (reason) => {
+    const original = normalizeState(body.state, date);
+    await env.DB.prepare('INSERT INTO family_sync_backups (code_hash, device_id, reason, state_json) VALUES (?, ?, ?, ?)')
+      .bind(hash, deviceId, reason, JSON.stringify(original)).run();
+  };
 
   if (!row) {
     if (operation !== 'create') return json({ error: '未找到该家庭同步记录，请先在另一台设备创建。' }, 404);
     const state = normalizeState(body.state, date);
+    await backup('create');
     await env.DB.prepare('INSERT INTO family_sync (code_hash, state_json, revision, updated_at) VALUES (?, ?, 1, datetime(\'now\'))')
       .bind(hash, JSON.stringify(state)).run();
-    return json({ state, revision: 1, created: true });
+    return json({ state, revision: 1, created: true, backupComplete: true, importVerified: true });
   }
 
   const serverState = normalizeState(JSON.parse(row.state_json), date);
   if (operation === 'create') return json({ error: '该同步码已经存在，请在另一台设备选择“加入并下载云端记录”。' }, 409);
-  if (operation === 'read' || operation === 'join') return json({ state: serverState, revision: row.revision });
-  const nextState = operation === 'reset' ? freshState(date) : mergeState(serverState, body.state, date);
+  if (operation === 'read') return json({ state: serverState, revision: row.revision });
+  if (operation === 'join' || operation === 'import') await backup(operation);
+  const nextState = operation === 'reset'
+    ? freshState(date, serverState.sync.generation + 1)
+    : mergeState(serverState, body.state, date);
   const result = await env.DB.prepare('UPDATE family_sync SET state_json = ?, revision = revision + 1, updated_at = datetime(\'now\') WHERE code_hash = ? AND revision = ?')
     .bind(JSON.stringify(nextState), hash, row.revision).run();
   if (!result.meta.changes) return json({ error: '同步冲突，请重试。', state: serverState, revision: row.revision }, 409);
-  return json({ state: nextState, revision: row.revision + 1 });
+  return json({
+    state: nextState,
+    revision: row.revision + 1,
+    backupComplete: operation === 'join' || operation === 'import',
+    importVerified: operation === 'join' || operation === 'import' ? containsState(nextState, body.state, date) : undefined
+  });
 }
