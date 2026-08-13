@@ -34,4 +34,5 @@ Read `README.md` and `PROJECT_CONTEXT.md` before changing code.
 - Use a focused branch for each feature or fix.
 - Do not combine unrelated changes.
 - Do not deploy to production unless the user explicitly asks.
-- The production URL is `https://starter-daily-dictation.vercel.app`.
+- The production URL is `https://starter-daily-dictation.pages.dev` on Cloudflare Pages.
+- Never clear `starter-dictation-v2` after cloud import; keep the D1 migration backup and verification flow intact.
