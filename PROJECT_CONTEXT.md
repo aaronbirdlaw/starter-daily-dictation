@@ -48,13 +48,16 @@
 - 使用 Web Speech API `speechSynthesis`，语言为 `en-GB`。
 - 使用设备本地日期生成每日计划，不能改成 UTC 日期。
 - 使用 `localStorage` 键 `starter-dictation-v2` 保存数据。
-- 当前数据结构版本为 `3`，包含 `days`、`memory`、`settings` 和 `startedAt`。
+- 当前数据结构版本为 `4`，包含 `days`、`memory`、`settings`、`startedAt` 和同步世代信息。
 - 旧版学习记录会在首次打开新版时迁移到记忆曲线结构。
-- 正式网站部署在 <https://starter-daily-dictation.vercel.app>。
+- 正式网站部署在 Cloudflare Pages：<https://starter-daily-dictation.pages.dev>。
+- 家庭同步使用 Cloudflare Pages Functions 与 D1；本机缓存仍是离线保护层。
+- 旧客户端升级后第一次同步必须先在 D1 保存完整备份，再做并集合并与完整性校验。
+- 普通同步不得用云端快照直接覆盖本机状态；Reset 使用递增世代隔离旧离线记录。
 
 ## 当前限制
 
-- 学习记录不会跨设备同步。
+- 未启用家庭同步时，学习记录不会跨设备同步。
 - 浏览器可用的英语语音由设备系统决定。
 - 网站当前没有账户、服务端数据库或家长管理界面。
 
