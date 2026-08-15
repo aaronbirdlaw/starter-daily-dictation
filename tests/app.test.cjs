@@ -55,6 +55,33 @@ function state(dom) {
   assert(current.settings.newCount === 3 && current.settings.reviewCount === 7, 'separate settings should save');
   assert(current.days[today].newIds.length === 3, 'today should update to 3 new words');
 
+  const raceSeed = JSON.parse(JSON.stringify(current));
+  raceSeed.settings = { newCount: 5, reviewCount: 5 };
+  raceSeed.sync.settingsUpdatedAt = '2026-08-10T00:00:00.000Z';
+  let releaseInitialSync;
+  const settingsRace = await load(
+    raceSeed,
+    { enabled: true, code: 'family-code', backupComplete: true, deviceId: 'settings-phone' },
+    () => new Promise(resolve => { releaseInitialSync = resolve; }),
+    'https://feature-cloud-sync.starter-daily-dictation.pages.dev'
+  );
+  settingsRace.window.document.querySelector('[data-tab="progress"]').click();
+  settingsRace.window.document.querySelector('#newCount').value = '8';
+  settingsRace.window.document.querySelector('#reviewCount').value = '9';
+  settingsRace.window.document.querySelector('#saveSettings').click();
+  releaseInitialSync({
+    ok: true,
+    status: 200,
+    json: async () => ({ state: raceSeed, revision: 2, backupComplete: true, importVerified: true })
+  });
+  await new Promise(resolve => setTimeout(resolve, 30));
+  const settingsAfterDelayedSync = state(settingsRace);
+  assert(
+    settingsAfterDelayedSync.settings.newCount === 8 && settingsAfterDelayedSync.settings.reviewCount === 9,
+    'a delayed sync response must not overwrite settings saved while the request was in flight'
+  );
+  settingsRace.window.close();
+
   const dueSeed = {
     version: 3,
     days: {},
