@@ -82,6 +82,18 @@ function state(dom) {
   );
   settingsRace.window.close();
 
+  const futureSettingsSeed = JSON.parse(JSON.stringify(raceSeed));
+  futureSettingsSeed.sync.settingsUpdatedAt = '2099-01-01T00:00:00.000Z';
+  const futureSettings = await load(futureSettingsSeed);
+  futureSettings.window.document.querySelector('[data-tab="progress"]').click();
+  futureSettings.window.document.querySelector('#newCount').value = '6';
+  futureSettings.window.document.querySelector('#reviewCount').value = '0';
+  futureSettings.window.document.querySelector('#saveSettings').click();
+  const recoveredSettings = state(futureSettings);
+  assert(recoveredSettings.settings.newCount === 6, 'settings should change even when an old cloud timestamp is in the future');
+  assert(recoveredSettings.settings.reviewCount === 0, 'zero review limit should save locally');
+  assert(recoveredSettings.sync.settingsUpdatedAt > futureSettingsSeed.sync.settingsUpdatedAt, 'a settings edit should advance the logical timestamp beyond a future value');
+
   const dueSeed = {
     version: 3,
     days: {},
