@@ -188,6 +188,31 @@ function state(dom) {
   assert(dueAfterSyncState.days[actualToday].reviewIds.includes(1), 'a due review received from cloud should be added to an existing daily plan');
   assert(dueAfterSync.window.document.querySelectorAll('.kind.review').length === 1, 'cloud-arrived due review should be rendered immediately');
 
+  let joinAttempts = 0;
+  const retryJoin = await load(undefined, undefined, async (_url, options) => {
+    joinAttempts += 1;
+    const request = JSON.parse(options.body);
+    return {
+      ok: true,
+      status: 200,
+      json: async () => ({
+        state: request.state,
+        revision: joinAttempts,
+        backupComplete: true,
+        importVerified: joinAttempts > 1
+      })
+    };
+  });
+  retryJoin.window.document.querySelector('[data-tab="progress"]').click();
+  retryJoin.window.document.querySelector('#syncCode').value = 'family-code';
+  retryJoin.window.document.querySelector('#joinSync').click();
+  await new Promise(resolve => setTimeout(resolve, 20));
+  assert(!retryJoin.window.document.querySelector('#retrySync').classList.contains('hidden'), 'failed join should show a retry action');
+  retryJoin.window.document.querySelector('#retrySync').click();
+  await new Promise(resolve => setTimeout(resolve, 20));
+  assert(joinAttempts === 2, 'retry should repeat join when family sync is not enabled yet');
+  assert(JSON.parse(retryJoin.window.localStorage.getItem('starter-dictation-sync-v1')).enabled, 'successful retry should enable family sync');
+
   const preview = await load(undefined, undefined, undefined, 'https://feature-cloud-sync.starter-daily-dictation.pages.dev');
   assert(!preview.window.document.querySelector('#testClockPanel').classList.contains('hidden'), 'preview should show time controls');
   const previewFirstWord = Number(preview.window.document.querySelector('[data-know]').dataset.know);
