@@ -42,6 +42,7 @@ export async function onRequestPost({ request, env }) {
   const nextState = operation === 'reset'
     ? freshState(date, serverState.sync.generation + 1)
     : mergeState(serverState, body.state, date);
+  if (operation === 'reset') nextState.sync.settingsUpdatedAt = new Date().toISOString();
   const result = await env.DB.prepare('UPDATE family_sync SET state_json = ?, revision = revision + 1, updated_at = datetime(\'now\') WHERE code_hash = ? AND revision = ?')
     .bind(JSON.stringify(nextState), hash, row.revision).run();
   if (!result.meta.changes) return json({ error: '同步冲突，请重试。', state: serverState, revision: row.revision }, 409);
