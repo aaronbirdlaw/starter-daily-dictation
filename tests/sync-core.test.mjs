@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { containsState, freshState, mergeState, normalizeState } from '../functions/lib/sync-core.mjs';
+import { containsState, freshState, mergeState, normalizeState, verifiesImport } from '../functions/lib/sync-core.mjs';
 
 const base = freshState('2026-08-10');
 base.days['2026-08-10'] = { date: '2026-08-10', newIds: [1, 2], reviewIds: [], doneIds: [1], completed: false };
@@ -23,6 +23,8 @@ const reset = freshState('2026-08-11', 1);
 const protectedReset = mergeState(reset, staleBeforeReset, '2026-08-11');
 assert.equal(protectedReset.sync.generation, 1, 'newer reset generation should win');
 assert.equal(Object.keys(protectedReset.memory).length, 0, 'stale offline data must not resurrect after reset');
+assert.equal(containsState(protectedReset, staleBeforeReset, '2026-08-11'), false, 'a stale generation is intentionally not contained after reset');
+assert.equal(verifiesImport(reset, staleBeforeReset, protectedReset, '2026-08-11'), true, 'a backed-up stale device should be allowed to join the newer reset generation');
 
 const oldSettings = freshState('2026-08-10');
 oldSettings.settings = { newCount: 2, reviewCount: 2 };
