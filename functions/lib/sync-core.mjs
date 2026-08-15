@@ -88,6 +88,16 @@ export function containsState(targetValue, sourceValue, date) {
   return true;
 }
 
+export function verifiesImport(serverValue, clientValue, targetValue, date) {
+  const server = normalizeState(serverValue, date);
+  const client = normalizeState(clientValue, date);
+  const target = normalizeState(targetValue, date);
+  if (server.sync.generation > client.sync.generation) {
+    return target.sync.generation === server.sync.generation;
+  }
+  return containsState(target, client, date);
+}
+
 export async function codeHash(code) {
   const bytes = new TextEncoder().encode(`starter-dictation-family-v1:${code}`);
   const digest = await crypto.subtle.digest('SHA-256', bytes);
