@@ -14,6 +14,9 @@ assert.equal(merged.days['2026-08-10'].completed, true, 'merged day should be co
 assert.equal(containsState(merged, base, '2026-08-10'), true, 'merged state should verify the original local import');
 assert.equal(containsState(merged, other, '2026-08-10'), true, 'merged state should verify the other phone import');
 assert.equal(normalizeState(null, '2026-08-10').settings.newCount, 5, 'missing state should use defaults');
+const zeroReviews = freshState('2026-08-10');
+zeroReviews.settings.reviewCount = 0;
+assert.equal(normalizeState(zeroReviews, '2026-08-10').settings.reviewCount, 0, 'zero review limit should remain zero');
 
 const staleBeforeReset = structuredClone(merged);
 const reset = freshState('2026-08-11', 1);
