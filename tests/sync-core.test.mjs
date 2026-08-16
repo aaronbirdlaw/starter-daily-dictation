@@ -34,4 +34,10 @@ newSettings.settings = { newCount: 8, reviewCount: 12 };
 newSettings.sync.settingsUpdatedAt = '2026-08-10T11:00:00.000Z';
 assert.deepEqual(mergeState(newSettings, oldSettings, '2026-08-10').settings, newSettings.settings, 'stale phone must not overwrite newer settings');
 
+const olderClock = freshState('2026-08-10');
+olderClock.sync.previewClock = { offset: 4, updatedAt: '2026-08-10T10:00:00.000Z' };
+const newerClock = structuredClone(olderClock);
+newerClock.sync.previewClock = { offset: 5, updatedAt: '2026-08-10T11:00:00.000Z' };
+assert.deepEqual(mergeState(olderClock, newerClock, '2026-08-10').sync.previewClock, newerClock.sync.previewClock, 'newer preview clock should synchronize across devices');
+
 console.log('PASS: family sync merge, import verification, reset isolation, settings ordering');

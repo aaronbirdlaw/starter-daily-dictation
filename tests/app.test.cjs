@@ -212,6 +212,11 @@ function state(dom) {
   await new Promise(resolve => setTimeout(resolve, 20));
   assert(joinAttempts === 2, 'retry should repeat join when family sync is not enabled yet');
   assert(JSON.parse(retryJoin.window.localStorage.getItem('starter-dictation-sync-v1')).enabled, 'successful retry should enable family sync');
+  assert(!retryJoin.window.document.querySelector('#syncNow').classList.contains('hidden'), 'manual sync should appear after family sync is enabled');
+  retryJoin.window.document.querySelector('#syncNow').click();
+  await new Promise(resolve => setTimeout(resolve, 20));
+  assert(joinAttempts === 3, 'manual sync should immediately contact the cloud');
+  assert(retryJoin.window.document.querySelector('#syncMeta').textContent.includes('云端版本 3'), 'sync metadata should show the latest cloud revision');
 
   const preview = await load(undefined, undefined, undefined, 'https://feature-cloud-sync.starter-daily-dictation.pages.dev');
   assert(!preview.window.document.querySelector('#testClockPanel').classList.contains('hidden'), 'preview should show time controls');
@@ -219,6 +224,7 @@ function state(dom) {
   preview.window.document.querySelector(`[data-know="${previewFirstWord}"]`).click();
   preview.window.document.querySelector('[data-test-days="1"]').click();
   const previewState = state(preview);
+  assert(previewState.sync.previewClock.offset === 1, 'preview clock changes should be stored in synchronized state');
   const simulatedToday = Object.keys(previewState.days).sort().at(-1);
   assert(previewState.days[simulatedToday].reviewIds.includes(previewFirstWord), 'advancing preview by one day should reveal the first review');
   assert(preview.window.document.querySelectorAll('.kind.review').length === 1, 'simulated due review should be rendered');
@@ -252,13 +258,60 @@ function state(dom) {
     assert(nextReviewState.days[nextReviewDay].reviewIds.includes(previewFirstWord), `review should reappear after ${interval} days`);
   });
 
+  const sharedClockSeed = {
+    version: 4,
+    days: {},
+    memory: {},
+    settings: { newCount: 5, reviewCount: 5 },
+    startedAt: actualToday,
+    sync: {
+      generation: 0,
+      settingsUpdatedAt: '2026-08-10T00:00:00.000Z',
+      previewClock: { offset: 4, updatedAt: '2026-08-10T10:00:00.000Z' }
+    }
+  };
+  const syncedPreview = await load(
+    sharedClockSeed,
+    { enabled: true, code: 'family-code', backupComplete: true, deviceId: 'second-preview-phone' },
+    async (_url, options) => {
+      const request = JSON.parse(options.body);
+      const remote = JSON.parse(JSON.stringify(request.state));
+      remote.sync.previewClock = { offset: 5, updatedAt: '2026-08-10T11:00:00.000Z' };
+      return { ok: true, status: 200, json: async () => ({ state: remote, revision: 9, backupComplete: true, importVerified: true }) };
+    },
+    'https://feature-cloud-sync.starter-daily-dictation.pages.dev'
+  );
+  await new Promise(resolve => setTimeout(resolve, 20));
+  assert(syncedPreview.window.document.querySelector('#testClockStatus').textContent.includes('已前进 5 天'), 'a newer cloud preview date should be adopted on another device');
+  assert(state(syncedPreview).sync.previewClock.offset === 5, 'the shared preview date should persist locally after cloud sync');
+
+  let initialClockOperation;
+  const previewWithoutSharedClock = await load(
+    { ...sharedClockSeed, sync: { generation: 0, settingsUpdatedAt: '2026-08-10T00:00:00.000Z' } },
+    { enabled: true, code: 'family-code', backupComplete: true, deviceId: 'old-preview-phone' },
+    async (_url, options) => {
+      const request = JSON.parse(options.body);
+      initialClockOperation = request.operation;
+      return { ok: true, status: 200, json: async () => ({ state: request.state, revision: 10, backupComplete: true, importVerified: true }) };
+    },
+    'https://feature-cloud-sync.starter-daily-dictation.pages.dev'
+  );
+  await new Promise(resolve => setTimeout(resolve, 20));
+  assert(initialClockOperation === 'save', 'an upgraded preview device should upload its simulated date before reading cloud state');
+
   fresh.window.document.querySelector('#reset').click();
   current = state(fresh);
   assert(current.settings.newCount === 5 && current.settings.reviewCount === 5, 'reset should restore defaults');
   assert(Object.keys(current.memory).length === 0, 'reset should clear learned words and review plan');
   assert(current.sync.generation === 1, 'reset should advance sync generation');
 
-  console.log('PASS: fresh plan, settings, Ebbinghaus review, cloud due refresh, preview clock, v4 migration, reset generation');
+  refreshed.window.close();
+  dueAfterSync.window.close();
+  retryJoin.window.close();
+  syncedPreview.window.close();
+  previewWithoutSharedClock.window.close();
+
+  console.log('PASS: fresh plan, settings, Ebbinghaus review, cloud due refresh, shared preview clock, manual sync, v4 migration, reset generation');
 })().catch(error => {
   console.error(error);
   process.exit(1);

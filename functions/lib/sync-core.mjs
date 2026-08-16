@@ -26,6 +26,15 @@ export function normalizeState(value, date) {
   state.sync = state.sync && typeof state.sync === 'object' ? state.sync : {};
   state.sync.generation = Math.max(0, Number(state.sync.generation) || 0);
   state.sync.settingsUpdatedAt = state.sync.settingsUpdatedAt || `${state.startedAt}T00:00:00.000Z`;
+  const previewOffset = Number(state.sync.previewClock?.offset);
+  if (Number.isFinite(previewOffset) && state.sync.previewClock?.updatedAt) {
+    state.sync.previewClock = {
+      offset: Math.min(365, Math.max(0, Math.floor(previewOffset))),
+      updatedAt: String(state.sync.previewClock.updatedAt)
+    };
+  } else {
+    delete state.sync.previewClock;
+  }
   return state;
 }
 
@@ -50,6 +59,15 @@ export function mergeState(serverValue, clientValue, date) {
   const clientSettingsAreNewer = client.sync.settingsUpdatedAt >= server.sync.settingsUpdatedAt;
   merged.settings = structuredClone(clientSettingsAreNewer ? client.settings : server.settings);
   merged.sync.settingsUpdatedAt = clientSettingsAreNewer ? client.sync.settingsUpdatedAt : server.sync.settingsUpdatedAt;
+  const serverClock = server.sync.previewClock;
+  const clientClock = client.sync.previewClock;
+  if (serverClock || clientClock) {
+    merged.sync.previewClock = structuredClone(
+      !serverClock ? clientClock
+        : !clientClock ? serverClock
+          : clientClock.updatedAt >= serverClock.updatedAt ? clientClock : serverClock
+    );
+  }
 
   for (const key of new Set([...Object.keys(server.days), ...Object.keys(client.days)])) {
     const left = server.days[key];
