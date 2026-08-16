@@ -45,6 +45,8 @@ function state(dom) {
   assert(fresh.window.document.querySelectorAll('#rows .word').length === 5, 'today should display each word for parents to read');
   assert(fresh.window.document.querySelector('#syncCode'), 'family sync code field should be available');
   assert(fresh.window.document.querySelector('#createSync'), 'family sync create action should be available');
+  assert(!fresh.window.document.querySelector('#syncSetup').classList.contains('hidden'), 'setup actions should be visible before family sync is enabled');
+  assert(fresh.window.document.querySelector('#syncNow').classList.contains('hidden'), 'manual refresh should be hidden before family sync is enabled');
   assert(fresh.window.document.querySelector('#testClockPanel').classList.contains('hidden'), 'production should hide preview time controls');
 
   fresh.window.document.querySelector('[data-tab="progress"]').click();
@@ -212,7 +214,9 @@ function state(dom) {
   await new Promise(resolve => setTimeout(resolve, 20));
   assert(joinAttempts === 2, 'retry should repeat join when family sync is not enabled yet');
   assert(JSON.parse(retryJoin.window.localStorage.getItem('starter-dictation-sync-v1')).enabled, 'successful retry should enable family sync');
+  assert(retryJoin.window.document.querySelector('#syncSetup').classList.contains('hidden'), 'create and join actions should disappear after this device is connected');
   assert(!retryJoin.window.document.querySelector('#syncNow').classList.contains('hidden'), 'manual sync should appear after family sync is enabled');
+  assert(retryJoin.window.document.querySelector('#syncHelp').textContent.includes('通常不需要手动操作'), 'connected state should explain that synchronization is automatic');
   retryJoin.window.document.querySelector('#syncNow').click();
   await new Promise(resolve => setTimeout(resolve, 20));
   assert(joinAttempts === 3, 'manual sync should immediately contact the cloud');
