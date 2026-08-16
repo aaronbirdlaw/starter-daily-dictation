@@ -241,6 +241,30 @@ function state(dom) {
   assert(safariFetchAttempts === 2, 'a Safari URL pattern error should retry the sync request once');
   assert(JSON.parse(safariCreate.window.localStorage.getItem('starter-dictation-sync-v1')).enabled, 'Safari fallback should finish creating family sync');
 
+  let androidFetchAttempts = 0;
+  const androidJoin = await load(undefined, undefined, async () => {
+    androidFetchAttempts += 1;
+    throw {};
+  });
+  let androidXhrBody;
+  androidJoin.window.XMLHttpRequest = class {
+    open(method, url) { this.method = method; this.url = url; }
+    setRequestHeader() {}
+    send(body) {
+      androidXhrBody = JSON.parse(body);
+      this.status = 200;
+      this.responseText = JSON.stringify({ state: androidXhrBody.state, revision: 4, backupComplete: true, importVerified: true });
+      setTimeout(() => this.onload(), 0);
+    }
+  };
+  androidJoin.window.document.querySelector('[data-tab="progress"]').click();
+  androidJoin.window.document.querySelector('#syncCode').value = 'android-family-code';
+  androidJoin.window.document.querySelector('#joinSync').click();
+  await new Promise(resolve => setTimeout(resolve, 30));
+  assert(androidFetchAttempts === 2, 'Android should try both absolute and relative fetch endpoints');
+  assert(androidXhrBody.operation === 'join', 'Android XHR fallback should preserve the requested join operation');
+  assert(JSON.parse(androidJoin.window.localStorage.getItem('starter-dictation-sync-v1')).enabled, 'Android XHR fallback should finish joining family sync');
+
   const preview = await load(undefined, undefined, undefined, 'https://feature-cloud-sync.starter-daily-dictation.pages.dev');
   assert(!preview.window.document.querySelector('#testClockPanel').classList.contains('hidden'), 'preview should show time controls');
   const previewFirstWord = Number(preview.window.document.querySelector('[data-know]').dataset.know);
@@ -332,6 +356,7 @@ function state(dom) {
   dueAfterSync.window.close();
   retryJoin.window.close();
   safariCreate.window.close();
+  androidJoin.window.close();
   syncedPreview.window.close();
   previewWithoutSharedClock.window.close();
 
