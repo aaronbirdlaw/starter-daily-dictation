@@ -59,4 +59,14 @@ assert(payload.created === false, 'repeated create should report an existing fam
 assert(payload.state.days[date].doneIds.includes(1) && payload.state.days[date].doneIds.includes(2), 'repeated create should merge both progress records');
 assert(db.backups.length === 2 && db.backups[1].reason === 'recreate', 'repeated create should back up local state before merging');
 
+const formBody = { code: 'same-family-code', operation: 'read', date, deviceId: 'android-form-fallback' };
+const formRequest = new Request('https://starter-daily-dictation.pages.dev/api/sync', {
+  method: 'POST',
+  headers: { 'content-type': 'application/x-www-form-urlencoded;charset=UTF-8' },
+  body: new URLSearchParams({ payload: JSON.stringify(formBody) })
+});
+const formResponse = await onRequestPost({ request: formRequest, env: { DB: db } });
+assert(formResponse.ok, 'form-encoded Android fallback should be accepted by the sync API');
+assert((await formResponse.json()).revision === 2, 'form-encoded read should return the current family revision');
+
 console.log('PASS: repeated family creation safely reconnects and merges progress');

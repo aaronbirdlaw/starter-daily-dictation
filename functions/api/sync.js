@@ -10,7 +10,14 @@ const today = () => new Date().toISOString().slice(0, 10);
 export async function onRequestPost({ request, env }) {
   if (!env.DB) return json({ error: '同步服务尚未配置数据库。' }, 503);
   let body;
-  try { body = await request.json(); } catch { return json({ error: '请求格式无效。' }, 400); }
+  try {
+    if ((request.headers.get('content-type') || '').includes('application/x-www-form-urlencoded')) {
+      const payload = new URLSearchParams(await request.text()).get('payload');
+      body = JSON.parse(payload || '');
+    } else {
+      body = await request.json();
+    }
+  } catch { return json({ error: '请求格式无效。' }, 400); }
   const code = String(body.code || '').trim();
   if (code.length < 8) return json({ error: '家庭同步码至少需要 8 位。' }, 400);
 

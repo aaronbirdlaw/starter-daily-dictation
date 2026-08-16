@@ -246,12 +246,18 @@ function state(dom) {
     androidFetchAttempts += 1;
     throw {};
   });
-  let androidXhrBody;
+  let androidXhrBody, androidXhrAttempts = 0;
   androidJoin.window.XMLHttpRequest = class {
     open(method, url) { this.method = method; this.url = url; }
-    setRequestHeader() {}
+    setRequestHeader(name, value) { if (name === 'content-type') this.contentType = value; }
     send(body) {
-      androidXhrBody = JSON.parse(body);
+      androidXhrAttempts += 1;
+      if (!this.contentType.startsWith('application/x-www-form-urlencoded')) {
+        this.status = 0;
+        setTimeout(() => this.onload(), 0);
+        return;
+      }
+      androidXhrBody = JSON.parse(new URLSearchParams(body).get('payload'));
       this.status = 200;
       this.responseText = JSON.stringify({ state: androidXhrBody.state, revision: 4, backupComplete: true, importVerified: true });
       setTimeout(() => this.onload(), 0);
@@ -262,6 +268,7 @@ function state(dom) {
   androidJoin.window.document.querySelector('#joinSync').click();
   await new Promise(resolve => setTimeout(resolve, 30));
   assert(androidFetchAttempts === 2, 'Android should try both absolute and relative fetch endpoints');
+  assert(androidXhrAttempts === 2, 'Android status 0 should fall back from JSON XHR to form-encoded XHR');
   assert(androidXhrBody.operation === 'join', 'Android XHR fallback should preserve the requested join operation');
   assert(JSON.parse(androidJoin.window.localStorage.getItem('starter-dictation-sync-v1')).enabled, 'Android XHR fallback should finish joining family sync');
 
