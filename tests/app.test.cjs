@@ -213,8 +213,8 @@ function state(dom) {
   retryJoin.window.document.querySelector('#syncCode').value = 'family-code';
   retryJoin.window.document.querySelector('#joinSync').click();
   await new Promise(resolve => setTimeout(resolve, 20));
-  assert(!retryJoin.window.document.querySelector('#retrySync').classList.contains('hidden'), 'failed join should show a retry action');
-  retryJoin.window.document.querySelector('#retrySync').click();
+  assert(retryJoin.window.document.querySelector('#retrySync').classList.contains('hidden'), 'setup failure should keep the create and join choices without adding a duplicate retry button');
+  retryJoin.window.document.querySelector('#joinSync').click();
   await new Promise(resolve => setTimeout(resolve, 20));
   assert(joinAttempts === 2, 'retry should repeat join when family sync is not enabled yet');
   assert(JSON.parse(retryJoin.window.localStorage.getItem('starter-dictation-sync-v1')).enabled, 'successful retry should enable family sync');
@@ -225,6 +225,21 @@ function state(dom) {
   await new Promise(resolve => setTimeout(resolve, 20));
   assert(joinAttempts === 3, 'manual sync should immediately contact the cloud');
   assert(retryJoin.window.document.querySelector('#syncMeta').textContent.includes('云端版本 3'), 'sync metadata should show the latest cloud revision');
+
+  let safariFetchAttempts = 0;
+  const safariCreate = await load(undefined, undefined, async (url, options) => {
+    safariFetchAttempts += 1;
+    if (safariFetchAttempts === 1) throw new Error('The string did not match the expected pattern.');
+    const request = JSON.parse(options.body);
+    assert(url === '/api/sync', 'Safari fallback should retry with the root-relative sync endpoint');
+    return { ok: true, status: 200, json: async () => ({ state: request.state, revision: 1, created: true, backupComplete: true, importVerified: true }) };
+  });
+  safariCreate.window.document.querySelector('[data-tab="progress"]').click();
+  safariCreate.window.document.querySelector('#syncCode').value = 'safari-family-code';
+  safariCreate.window.document.querySelector('#createSync').click();
+  await new Promise(resolve => setTimeout(resolve, 20));
+  assert(safariFetchAttempts === 2, 'a Safari URL pattern error should retry the sync request once');
+  assert(JSON.parse(safariCreate.window.localStorage.getItem('starter-dictation-sync-v1')).enabled, 'Safari fallback should finish creating family sync');
 
   const preview = await load(undefined, undefined, undefined, 'https://feature-cloud-sync.starter-daily-dictation.pages.dev');
   assert(!preview.window.document.querySelector('#testClockPanel').classList.contains('hidden'), 'preview should show time controls');
@@ -316,6 +331,7 @@ function state(dom) {
   refreshed.window.close();
   dueAfterSync.window.close();
   retryJoin.window.close();
+  safariCreate.window.close();
   syncedPreview.window.close();
   previewWithoutSharedClock.window.close();
 

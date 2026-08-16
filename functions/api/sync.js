@@ -38,9 +38,9 @@ export async function onRequestPost({ request, env }) {
   const serverState = normalizeState(JSON.parse(row.state_json), date);
   const clientState = normalizeState(body.state, date);
   const staleGenerationRecovered = serverState.sync.generation > clientState.sync.generation;
-  if (operation === 'create') return json({ error: '该同步码已经存在，请在另一台设备选择“加入并下载云端记录”。' }, 409);
   if (operation === 'read') return json({ state: serverState, revision: row.revision });
-  if (operation === 'join' || operation === 'import') await backup(operation);
+  const importsLocalState = operation === 'create' || operation === 'join' || operation === 'import';
+  if (importsLocalState) await backup(operation === 'create' ? 'recreate' : operation);
   const nextState = operation === 'reset'
     ? freshState(date, serverState.sync.generation + 1)
     : mergeState(serverState, body.state, date);
@@ -57,8 +57,9 @@ export async function onRequestPost({ request, env }) {
   return json({
     state: nextState,
     revision: row.revision + 1,
-    backupComplete: operation === 'join' || operation === 'import',
-    importVerified: operation === 'join' || operation === 'import' ? verifiesImport(serverState, clientState, nextState, date) : undefined,
-    staleGenerationRecovered: operation === 'join' || operation === 'import' ? staleGenerationRecovered : undefined
+    created: operation === 'create' ? false : undefined,
+    backupComplete: importsLocalState,
+    importVerified: importsLocalState ? verifiesImport(serverState, clientState, nextState, date) : undefined,
+    staleGenerationRecovered: importsLocalState ? staleGenerationRecovered : undefined
   });
 }
