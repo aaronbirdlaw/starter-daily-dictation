@@ -43,6 +43,10 @@ function state(dom) {
   assert(current.days[today].reviewIds.length === 0, 'fresh plan should have no due review words');
   assert(fresh.window.document.querySelectorAll('#rows input').length === 0, 'today should not require keyboard input');
   assert(fresh.window.document.querySelectorAll('#rows .word').length === 5, 'today should display each word for parents to read');
+  const firstWords = [...fresh.window.document.querySelectorAll('#rows .word')].map(element => element.textContent.trim());
+  const firstLengths = firstWords.map(word => word.replace(/[^a-z]/gi, '').length);
+  assert(firstLengths.every((length, index) => index === 0 || firstLengths[index - 1] <= length), 'new words should be ordered from fewer letters to more letters');
+  assert(firstWords.join('|') === 'a|I|an|at|be', 'a fresh learner should start with the shortest deterministic spelling set');
   assert(fresh.window.document.querySelector('#syncCode'), 'family sync code field should be available');
   assert(fresh.window.document.querySelector('#createSync'), 'family sync create action should be available');
   assert(!fresh.window.document.querySelector('#syncSetup').classList.contains('hidden'), 'setup actions should be visible before family sync is enabled');
