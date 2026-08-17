@@ -220,11 +220,21 @@ function state(dom) {
   assert(JSON.parse(retryJoin.window.localStorage.getItem('starter-dictation-sync-v1')).enabled, 'successful retry should enable family sync');
   assert(retryJoin.window.document.querySelector('#syncSetup').classList.contains('hidden'), 'create and join actions should disappear after this device is connected');
   assert(!retryJoin.window.document.querySelector('#syncNow').classList.contains('hidden'), 'manual sync should appear after family sync is enabled');
+  assert(!retryJoin.window.document.querySelector('#manageSync').classList.contains('hidden'), 'connected devices should offer family sync management');
+  retryJoin.window.document.querySelector('#manageSync').click();
+  assert(!retryJoin.window.document.querySelector('#syncManager').classList.contains('hidden'), 'family sync manager should open on demand');
+  retryJoin.window.document.querySelector('#showSyncCode').click();
+  assert(retryJoin.window.document.querySelector('#currentSyncCode').textContent.includes('family-code'), 'a connected device should be able to reveal its current sync code');
+  retryJoin.window.document.querySelector('#newSyncCode').value = 'new-family-code';
+  retryJoin.window.document.querySelector('#newSyncCodeConfirm').value = 'new-family-code';
+  retryJoin.window.document.querySelector('#createNewPlan').click();
+  await new Promise(resolve => setTimeout(resolve, 20));
+  assert(JSON.parse(retryJoin.window.localStorage.getItem('starter-dictation-sync-v1')).code === 'new-family-code', 'creating a new family plan should switch only this device to the new code');
   assert(retryJoin.window.document.querySelector('#syncHelp').textContent.includes('通常不需要手动操作'), 'connected state should explain that synchronization is automatic');
   retryJoin.window.document.querySelector('#syncNow').click();
   await new Promise(resolve => setTimeout(resolve, 20));
-  assert(joinAttempts === 3, 'manual sync should immediately contact the cloud');
-  assert(retryJoin.window.document.querySelector('#syncMeta').textContent.includes('云端版本 3'), 'sync metadata should show the latest cloud revision');
+  assert(joinAttempts === 4, 'manual sync should immediately contact the cloud');
+  assert(retryJoin.window.document.querySelector('#syncMeta').textContent.includes('云端版本 4'), 'sync metadata should show the latest cloud revision');
 
   let safariFetchAttempts = 0;
   const safariCreate = await load(undefined, undefined, async (url, options) => {
