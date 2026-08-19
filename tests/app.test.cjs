@@ -42,6 +42,9 @@ function state(dom) {
   assert(current.days[today].newIds.length === 5, 'fresh plan should contain 5 new words');
   assert(current.days[today].reviewIds.length === 0, 'fresh plan should have no due review words');
   assert(fresh.window.document.querySelectorAll('#rows input').length === 0, 'today should not require keyboard input');
+  assert(fresh.window.document.querySelector('#speechStatus'), 'speech errors should have an accessible status area');
+  fresh.window.document.querySelector('[data-say]').click();
+  assert(!fresh.window.document.querySelector('#speechStatus').classList.contains('hidden'), 'unsupported browser speech should explain why playback did not start');
   assert(fresh.window.document.querySelectorAll('#rows .word').length === 5, 'today should display each word for parents to read');
   const firstWords = [...fresh.window.document.querySelectorAll('#rows .word')].map(element => element.textContent.trim());
   const firstLengths = firstWords.map(word => word.replace(/[^a-z]/gi, '').length);
