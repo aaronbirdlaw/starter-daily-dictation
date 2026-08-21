@@ -60,6 +60,14 @@ function state(dom) {
   current = state(fresh);
   assert(current.settings.newCount === 3 && current.settings.reviewCount === 7, 'separate settings should save');
   assert(current.days[today].newIds.length === 3, 'today should update to 3 new words');
+  const themedWords = new Set(['black', 'blue', 'brown', 'gray (UK grey)', 'green', 'grey (US gray)', 'orange', 'pink', 'purple', 'red', 'white', 'yellow', 'bike', 'boat', 'bus', 'car', 'helicopter', 'lorry (US truck)', 'motorbike', 'plane', 'ship', 'train', 'truck (UK lorry)', 'badminton', 'baseball', 'basketball', 'football (US soccer)', 'hockey', 'skateboard', 'skateboarding', 'soccer (UK football)', 'swim', 'table tennis', 'tennis', 'apple', 'banana', 'bread', 'burger', 'cake', 'candy (UK sweets)', 'carrot', 'chicken', 'chips (US fries)', 'chocolate', 'coconut', 'drink', 'egg', 'fish', 'food', 'fruit', 'grape', 'ice cream', 'juice', 'lemon', 'lemonade', 'mango', 'meat', 'meatballs', 'milk', 'onion', 'pea', 'pear', 'pineapple', 'potato', 'rice', 'sausage', 'sweets (US candy)', 'tomato', 'water', 'watermelon']);
+  assert(fresh.window.document.querySelector('#learningTrack'), 'learning route selector should be available');
+  fresh.window.document.querySelector('#learningTrack').value = 'themes';
+  fresh.window.document.querySelector('#saveSettings').click();
+  current = state(fresh);
+  assert(current.settings.learningTrack === 'themes', 'theme-priority route should save');
+  assert(current.days[today].newIds.every(id => themedWords.has(fresh.window.document.querySelectorAll('#rows .word')[current.days[today].newIds.indexOf(id)].textContent.trim())), 'theme-priority route should select themed words first');
+  assert(current.days[today].doneIds.length === 0, 'switching routes must not fabricate completed words');
 
   const raceSeed = JSON.parse(JSON.stringify(current));
   raceSeed.settings = { newCount: 5, reviewCount: 5 };

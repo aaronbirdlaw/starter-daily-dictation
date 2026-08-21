@@ -1,4 +1,4 @@
-export const DEFAULT_SETTINGS = { newCount: 5, reviewCount: 5 };
+export const DEFAULT_SETTINGS = { newCount: 5, reviewCount: 5, learningTrack: 'all' };
 
 export function freshState(date, generation = 0) {
   return {
@@ -15,12 +15,14 @@ export function normalizeState(value, date) {
   const state = value && typeof value === 'object' ? structuredClone(value) : freshState(date);
   const newCount = Number(state.settings?.newCount);
   const reviewCount = Number(state.settings?.reviewCount);
+  const learningTrack = state.settings?.learningTrack;
   state.version = 4;
   state.days = state.days && typeof state.days === 'object' ? state.days : {};
   state.memory = state.memory && typeof state.memory === 'object' ? state.memory : {};
   state.settings = {
     newCount: Number.isFinite(newCount) ? Math.min(20, Math.max(1, newCount)) : 5,
-    reviewCount: Number.isFinite(reviewCount) ? Math.min(50, Math.max(0, reviewCount)) : 5
+    reviewCount: Number.isFinite(reviewCount) ? Math.min(50, Math.max(0, reviewCount)) : 5,
+    learningTrack: learningTrack === 'themes' ? 'themes' : 'all'
   };
   state.startedAt = state.startedAt || date;
   state.sync = state.sync && typeof state.sync === 'object' ? state.sync : {};
