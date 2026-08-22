@@ -60,6 +60,19 @@ function state(dom) {
   current = state(fresh);
   assert(current.settings.newCount === 3 && current.settings.reviewCount === 7, 'separate settings should save');
   assert(current.days[today].newIds.length === 3, 'today should update to 3 new words');
+  const completedBeforeTrackChange = current.days[today].newIds[0];
+  fresh.window.document.querySelector(`[data-know="${completedBeforeTrackChange}"]`).click();
+  current = state(fresh);
+  assert(current.memory[completedBeforeTrackChange], 'completing a word should create its review-memory record');
+  const themedWords = new Set(['black', 'blue', 'brown', 'gray (UK grey)', 'green', 'grey (US gray)', 'orange', 'pink', 'purple', 'red', 'white', 'yellow', 'bike', 'boat', 'bus', 'car', 'helicopter', 'lorry (US truck)', 'motorbike', 'plane', 'ship', 'train', 'truck (UK lorry)', 'badminton', 'baseball', 'basketball', 'football (US soccer)', 'hockey', 'skateboard', 'skateboarding', 'soccer (UK football)', 'swim', 'table tennis', 'tennis', 'apple', 'banana', 'bread', 'burger', 'cake', 'candy (UK sweets)', 'carrot', 'chicken', 'chips (US fries)', 'chocolate', 'coconut', 'drink', 'egg', 'fish', 'food', 'fruit', 'grape', 'ice cream', 'juice', 'lemon', 'lemonade', 'mango', 'meat', 'meatballs', 'milk', 'onion', 'pea', 'pear', 'pineapple', 'potato', 'rice', 'sausage', 'sweets (US candy)', 'tomato', 'water', 'watermelon']);
+  assert(fresh.window.document.querySelector('#learningTrack'), 'learning route selector should be available');
+  fresh.window.document.querySelector('#learningTrack').value = 'themes';
+  fresh.window.document.querySelector('#saveSettings').click();
+  current = state(fresh);
+  assert(current.settings.learningTrack === 'themes', 'theme-priority route should save');
+  assert(current.days[today].newIds.filter(id => id !== completedBeforeTrackChange).every(id => themedWords.has(fresh.window.document.querySelectorAll('#rows .word')[current.days[today].newIds.indexOf(id)].textContent.trim())), 'theme-priority route should select themed words first without replacing completed words');
+  assert(current.memory[completedBeforeTrackChange], 'switching routes must preserve completed-word review memory');
+  assert(current.days[today].doneIds.includes(completedBeforeTrackChange), 'switching routes must retain the completed word in today’s record');
 
   const raceSeed = JSON.parse(JSON.stringify(current));
   raceSeed.settings = { newCount: 5, reviewCount: 5 };
