@@ -67,3 +67,7 @@ npm test
 建议总量为 `max(10, 新词上限 × 3)`，这是起步参数，不是科学定值或严格每日上限。每天先列出全部到期复习，再用建议总量的剩余额度安排新词，最多不超过新词上限。已完成项目始终保留，可能使当天超过建议量。新词不足时不拿已学词补数。
 
 “总量太多”将建议的新词上限降至约 60%（至少减少 1 个，最低 1 个）；只有确认才保存。最低建议总量为 10，进一步降低新词会减少后续新增负担，但不隐藏到期任务。保留旧 `reviewCount` 字段用于兼容旧记录，新客户端不再用它截断复习，无须清空或重置家庭记录。
+
+## Daily review batches (supersedes prior unlimited daily-list rule)
+
+Today is limited to the suggested total. Yesterday’s new words receive first-review priority; other reviews are oldest-due first. Preserve completed items even after lowering the target. Excess reviews remain in memory at their original dates and appear as a separate backlog count. Completing today succeeds even with backlog. Continue review explicitly adds up to five words; the per-day extraReview allowance defaults to zero and synchronizes by maximum, never sum. No automatic refill on completion or sync. Memory and existing dates are never reset.

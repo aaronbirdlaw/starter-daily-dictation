@@ -42,3 +42,10 @@ newerClock.sync.previewClock = { offset: 5, updatedAt: '2026-08-10T11:00:00.000Z
 assert.deepEqual(mergeState(olderClock, newerClock, '2026-08-10').sync.previewClock, newerClock.sync.previewClock, 'newer preview clock should synchronize across devices');
 
 console.log('PASS: family sync merge, import verification, reset isolation, settings ordering');
+
+
+const extra = structuredClone(base);
+extra.days['2026-08-10'].extraReview = 5;
+assert.equal(mergeState(base, extra, '2026-08-10').days['2026-08-10'].extraReview, 5, 'legacy phone cannot remove voluntary batch allowance');
+assert.equal(mergeState(extra, extra, '2026-08-10').days['2026-08-10'].extraReview, 5, 'sync must not double voluntary batch allowance');
+assert.deepEqual(mergeState(base, extra, '2026-08-10').memory, base.memory, 'batch allowance never modifies memory');

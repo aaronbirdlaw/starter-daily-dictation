@@ -81,6 +81,7 @@ export function mergeState(serverValue, clientValue, date) {
     const doneIds = ids([...(left.doneIds || []), ...(right.doneIds || [])]).filter(id => newIds.includes(id) || reviewIds.includes(id));
     merged.days[key] = {
       date: key,
+      extraReview: Math.min(495, Math.max(0, Math.floor(Number(left.extraReview) || 0), Math.floor(Number(right.extraReview) || 0))),
       newIds,
       reviewIds,
       doneIds,
@@ -123,3 +124,4 @@ export async function codeHash(code) {
   const digest = await crypto.subtle.digest('SHA-256', bytes);
   return [...new Uint8Array(digest)].map(value => value.toString(16).padStart(2, '0')).join('');
 }
+

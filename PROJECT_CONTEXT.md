@@ -75,3 +75,7 @@
 - 每项功能使用独立分支；测试通过后再合并到 `main`。
 - 未经明确要求，不直接部署正式环境。
 
+
+## Daily review batches (supersedes prior unlimited daily-list rule)
+
+Today is limited to the suggested total. Yesterday’s new words receive first-review priority; other reviews are oldest-due first. Preserve completed items even after lowering the target. Excess reviews remain in memory at their original dates and appear as a separate backlog count. Completing today succeeds even with backlog. Continue review explicitly adds up to five words; the per-day extraReview allowance defaults to zero and synchronizes by maximum, never sum. No automatic refill on completion or sync. Memory and existing dates are never reset.
