@@ -55,10 +55,10 @@ function state(dom) {
 
   fresh.window.document.querySelector('[data-tab="progress"]').click();
   fresh.window.document.querySelector('#newCount').value = '3';
-  fresh.window.document.querySelector('#reviewCount').value = '7';
   fresh.window.document.querySelector('#saveSettings').click();
+  fresh.window.document.querySelector('#confirmPlan').click();
   current = state(fresh);
-  assert(current.settings.newCount === 3 && current.settings.reviewCount === 7, 'separate settings should save');
+  assert(current.settings.newCount === 3 && current.settings.reviewCount === 5, 'new intake should save while retaining the legacy field');
   assert(current.days[today].newIds.length === 3, 'today should update to 3 new words');
   const completedBeforeTrackChange = current.days[today].newIds[0];
   fresh.window.document.querySelector(`[data-know="${completedBeforeTrackChange}"]`).click();
@@ -68,6 +68,7 @@ function state(dom) {
   assert(fresh.window.document.querySelector('#learningTrack'), 'learning route selector should be available');
   fresh.window.document.querySelector('#learningTrack').value = 'themes';
   fresh.window.document.querySelector('#saveSettings').click();
+  fresh.window.document.querySelector('#confirmPlan').click();
   current = state(fresh);
   assert(current.settings.learningTrack === 'themes', 'theme-priority route should save');
   assert(current.days[today].newIds.filter(id => id !== completedBeforeTrackChange).every(id => themedWords.has(fresh.window.document.querySelectorAll('#rows .word')[current.days[today].newIds.indexOf(id)].textContent.trim())), 'theme-priority route should select themed words first without replacing completed words');
@@ -86,8 +87,8 @@ function state(dom) {
   );
   settingsRace.window.document.querySelector('[data-tab="progress"]').click();
   settingsRace.window.document.querySelector('#newCount').value = '8';
-  settingsRace.window.document.querySelector('#reviewCount').value = '9';
   settingsRace.window.document.querySelector('#saveSettings').click();
+  settingsRace.window.document.querySelector('#confirmPlan').click();
   releaseInitialSync({
     ok: true,
     status: 200,
@@ -96,7 +97,7 @@ function state(dom) {
   await new Promise(resolve => setTimeout(resolve, 30));
   const settingsAfterDelayedSync = state(settingsRace);
   assert(
-    settingsAfterDelayedSync.settings.newCount === 8 && settingsAfterDelayedSync.settings.reviewCount === 9,
+    settingsAfterDelayedSync.settings.newCount === 8 && settingsAfterDelayedSync.settings.reviewCount === 5,
     'a delayed sync response must not overwrite settings saved while the request was in flight'
   );
   settingsRace.window.close();
@@ -106,11 +107,11 @@ function state(dom) {
   const futureSettings = await load(futureSettingsSeed);
   futureSettings.window.document.querySelector('[data-tab="progress"]').click();
   futureSettings.window.document.querySelector('#newCount').value = '6';
-  futureSettings.window.document.querySelector('#reviewCount').value = '0';
   futureSettings.window.document.querySelector('#saveSettings').click();
+  futureSettings.window.document.querySelector('#confirmPlan').click();
   const recoveredSettings = state(futureSettings);
   assert(recoveredSettings.settings.newCount === 6, 'settings should change even when an old cloud timestamp is in the future');
-  assert(recoveredSettings.settings.reviewCount === 0, 'zero review limit should save locally');
+  assert(recoveredSettings.settings.reviewCount === 5, 'legacy review field should remain compatible');
   assert(recoveredSettings.sync.settingsUpdatedAt > futureSettingsSeed.sync.settingsUpdatedAt, 'a settings edit should advance the logical timestamp beyond a future value');
 
   const dueSeed = {
@@ -395,3 +396,4 @@ function state(dom) {
   console.error(error);
   process.exit(1);
 });
+

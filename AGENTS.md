@@ -10,8 +10,8 @@ Read `README.md` and `PROJECT_CONTEXT.md` before changing code.
 - Use the learner's local calendar date, not UTC, for daily plans.
 - A completed word must remain visibly crossed out.
 - Completed items must not be discarded when daily quantity settings change.
-- Due reviews are ordered by oldest `nextReview` first and capped by the configured review limit.
-- Reset must clear all learning data and restore 5 new words and 5 review words per day.
+- Due reviews are ordered by oldest `nextReview` first and never capped. The user-approved adaptive plan replaces the former review limit.
+- Reset clears learning data and restores a 5-new-word ceiling with a derived 15-word suggested total. Preserve legacy reviewCount=5 for backward compatibility; it no longer caps reviews.
 
 ## Engineering rules
 
@@ -36,3 +36,4 @@ Read `README.md` and `PROJECT_CONTEXT.md` before changing code.
 - Do not deploy to production unless the user explicitly asks.
 - The production URL is `https://starter-daily-dictation.pages.dev` on Cloudflare Pages.
 - Never clear `starter-dictation-v2` after cloud import; keep the D1 migration backup and verification flow intact.
+

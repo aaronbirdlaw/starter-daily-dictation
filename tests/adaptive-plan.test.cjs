@@ -1,0 +1,92 @@
+const fs = require('node:fs');
+const assert = require('node:assert/strict');
+const { JSDOM } = require('jsdom');
+const html = fs.readFileSync(require('node:path').join(__dirname, '../index.html'), 'utf8');
+const key = 'starter-dictation-v2';
+const windows = [];
+function load(seed) {
+  const dom = new JSDOM(html, { url: 'https://feature-adaptive-daily-plan.starter-daily-dictation.pages.dev', runScripts: 'dangerously', beforeParse(w) {
+    w.prompt = () => 'reset';
+    if (seed) w.localStorage.setItem(key, JSON.stringify(seed));
+  }});
+  windows.push(dom.window);
+  return dom.window;
+}
+const state = w => JSON.parse(w.localStorage.getItem(key));
+const click = (w, id) => w.document.querySelector(id).click();
+const today = w => Object.keys(state(w).days).sort().at(-1);
+const plan = w => state(w).days[today(w)];
+const input = (w, value) => { w.document.querySelector('#newCount').value = String(value); w.document.querySelector('#newCount').dispatchEvent(new w.Event('input')); };
+try {
+  const w = load();
+  click(w, '[data-tab="progress"]');
+  assert.equal(w.document.querySelector('#reviewCount'), null);
+  input(w, 5);click(w, '#saveSettings');
+  assert.match(w.document.querySelector('#proposalText').textContent, /15/);
+  click(w, '#reducePlan');
+  assert.match(w.document.querySelector('#proposalText').textContent, /3.*10/);
+  assert.equal(state(w).settings.newCount, 5, 'reduction is only a draft');
+  click(w, '#cancelPlan');
+  assert.equal(state(w).settings.newCount, 5);
+  click(w, '#saveSettings');click(w, '#reducePlan');click(w, '#confirmPlan');
+  assert.equal(state(w).settings.newCount, 3);
+  assert.equal(plan(w).newIds.length, 3);
+  click(w, '#confirmPlan');assert.equal(state(w).settings.newCount, 3, 'double confirm is harmless');
+  for (const bad of ['', 0, -1, 1.5, 21]) {
+    input(w, bad);click(w, '#saveSettings');click(w, '#confirmPlan');
+    assert.equal(state(w).settings.newCount, 3, 'invalid input must not save');
+    assert.match(w.document.querySelector('#settingMsg').textContent, /整数/);
+  }
+  input(w, 5);click(w, '#saveSettings');click(w, '#confirmPlan');
+  input(w, 5);click(w, '#saveSettings');input(w, 8);click(w, '#confirmPlan');
+  assert.equal(state(w).settings.newCount, 5, 'editing input invalidates the previous proposal');
+  input(w, 1);click(w, '#saveSettings');
+  assert(w.document.querySelector('#reducePlan').disabled, 'minimum intake is explicit');
+  click(w, '#cancelPlan');
+  let spoken;
+  w.speechSynthesis = { cancel() {}, getVoices: () => [{ lang: 'en-GB' }], speak(u) { spoken=u; } };
+  w.SpeechSynthesisUtterance = function(text) { this.text=text; };
+  click(w, '[data-tab="today"]');click(w, '[data-say]');
+  assert.equal(spoken.lang, 'en-GB');
+  click(w, '[data-tab="words"]');assert.equal(w.document.querySelectorAll('.bank-word').length, 495);
+  click(w, '[data-bank-say]');assert(spoken.text);
+  click(w, '[data-tab="today"]');
+  const first = [...plan(w).newIds];
+  for (const id of first) click(w, `[data-know="${id}"]`);
+  click(w, '[data-test-days="1"]');
+  assert.deepEqual([...plan(w).reviewIds].sort((a,b)=>a-b), [...first].sort((a,b)=>a-b), 'all five yesterday words must return');
+  const seed = state(w), date = today(w);
+  for (let id = 300; id < 307; id++) seed.memory[id] = { stage: 1, learnedAt: '2020-01-01', lastReviewed: '2020-01-02', nextReview: '2020-01-04' };
+  seed.settings.reviewCount = 0; // Old preferences must not suppress any due words.
+  const crowded = load(seed);
+  assert.equal(plan(crowded).reviewIds.length, 12);
+  assert.equal(plan(crowded).newIds.length, 3);
+  assert(first.every(id => plan(crowded).reviewIds.includes(id)));
+  assert.equal(plan(crowded).reviewIds[0], 300, 'oldest due reviews still come first');
+  const done = plan(crowded).newIds[0];click(crowded, `[data-know="${done}"]`);
+  const heavySeed = state(crowded);
+  for (let id = 307; id < 315; id++) heavySeed.memory[id] = { stage: 0, learnedAt: '2020-01-01', lastReviewed: '2020-01-01', nextReview: '2020-01-02' };
+  const heavy = load(heavySeed);
+  assert.equal(plan(heavy).reviewIds.length, 20, 'over-budget reviews remain visible');
+  assert.deepEqual(plan(heavy).newIds, [done], 'only already-completed new word survives heavy review load');
+  assert(heavy.document.querySelector('.word-row.done .crossed'));
+  assert.match(heavy.document.querySelector('#heroCopy').textContent, /分批/);
+  const stable = plan(heavy);
+  const reloaded = load(state(heavy));assert.deepEqual(plan(reloaded), stable, 'refresh is idempotent');
+  click(heavy, '[data-test-days="2"]');
+  assert.equal(plan(heavy).reviewIds.length, 21, 'missed reviews carry forward without duplicating rounds');
+  assert.equal(plan(heavy).newIds.length, 0);
+  assert.equal(state(heavy).memory[300].stage, 1, 'missed days never advance memory');
+  const notStarted = load({ ...seed, memory: {}, days: { [date]: { date, newIds: [0], reviewIds: [], doneIds: [] } } });
+  click(notStarted, '[data-test-days="1"]');assert.equal(plan(notStarted).reviewIds.length, 0, 'displaying a new word does not start its memory clock');
+  const exhausted = JSON.parse(JSON.stringify(seed));
+  exhausted.days = {};
+  exhausted.memory = Object.fromEntries(Array.from({length:495}, (_,id) => [id,{stage:6,learnedAt:'2020-01-01',lastReviewed:date,nextReview:'2099-01-01'}]));
+  const end = load(exhausted);assert.equal(plan(end).newIds.length, 0, 'exhausted word bank does not recycle learned words as new');
+  const rollover = load(), stale = rollover.document.querySelector('[data-know]');
+  rollover.eval('testDayOffset += 1');stale.click();
+  assert.equal(Object.keys(state(rollover).memory).length, 0, 'stale click after midnight refreshes the plan instead of recording an old task');
+  assert.equal(Object.keys(state(rollover).days).length, 2);
+  click(heavy, '#reset');assert.equal(state(heavy).settings.newCount, 5);assert.equal(Object.keys(state(heavy).memory).length, 0);
+  console.log('PASS: recommendation/confirmation, cancellation, validation, next-day recall, 12/20 overdue reviews, completed preservation, reload, missed days, exhausted bank, reset');
+} finally { windows.forEach(w => w.close()); }
