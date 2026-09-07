@@ -92,6 +92,22 @@ try {
   assert.equal(plan(forty).extraReview,5);assert.match(forty.document.querySelector('#backlogText').textContent,/20/);
   const extraReload=load(state(forty));assert.equal(plan(extraReload).reviewIds.length,20);
   assert.equal(Object.keys(state(forty).memory).length,40);
+  const retry = load();
+  const retryId = plan(retry).newIds[0];
+  assert.equal(retry.document.querySelector('[data-not-confident]'), null, 'new words should retain the normal completion action');
+  click(retry, `[data-know="${retryId}"]`);
+  click(retry, '[data-test-days="1"]');
+  assert(retry.document.querySelector(`[data-not-confident="${retryId}"]`), 'due reviews should offer the not-confident action');
+  const retryDate = today(retry);
+  click(retry, `[data-not-confident="${retryId}"]`);
+  assert(plan(retry).doneIds.includes(retryId), 'not-confident review should still complete today’s task');
+  assert.equal(state(retry).memory[retryId].stage, 0, 'not-confident review should restart at the first review stage');
+  const retryTomorrow = new Date(`${retryDate}T12:00:00`);retryTomorrow.setDate(retryTomorrow.getDate()+1);
+  const retryDueDate = `${retryTomorrow.getFullYear()}-${String(retryTomorrow.getMonth()+1).padStart(2,'0')}-${String(retryTomorrow.getDate()).padStart(2,'0')}`;
+  assert.equal(state(retry).memory[retryId].nextReview, retryDueDate, 'not-confident review should return tomorrow');
+  assert.match(retry.document.querySelector('.feedback').textContent, /已安排下一轮复习/);
+  click(retry, '[data-test-days="1"]');
+  assert(plan(retry).reviewIds.includes(retryId), 'restarted review should reappear in the next round');
   const exhausted = JSON.parse(JSON.stringify(seed));
   exhausted.days = {};
   exhausted.memory = Object.fromEntries(Array.from({length:495}, (_,id) => [id,{stage:6,learnedAt:'2020-01-01',lastReviewed:date,nextReview:'2099-01-01'}]));
@@ -101,5 +117,5 @@ try {
   assert.equal(Object.keys(state(rollover).memory).length, 0, 'stale click after midnight refreshes the plan instead of recording an old task');
   assert.equal(Object.keys(state(rollover).days).length, 2);
   click(heavy, '#reset');assert.equal(state(heavy).settings.newCount, 5);assert.equal(Object.keys(state(heavy).memory).length, 0);
-  console.log('PASS: recommendation/confirmation, cancellation, validation, next-day recall, 12/20 overdue reviews, completed preservation, reload, missed days, exhausted bank, reset');
+  console.log('PASS: recommendation/confirmation, cancellation, validation, next-day recall, not-confident restart, 12/20 overdue reviews, completed preservation, reload, missed days, exhausted bank, reset');
 } finally { windows.forEach(w => w.close()); }

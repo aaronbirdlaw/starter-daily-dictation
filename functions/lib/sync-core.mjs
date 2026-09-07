@@ -45,6 +45,9 @@ const ids = values => [...new Set((values || []).map(Number).filter(Number.isInt
 function mergeMemory(current, incoming) {
   if (!current) return incoming;
   if (!incoming) return current;
+  const currentRestart = current.restartedAt || '';
+  const incomingRestart = incoming.restartedAt || '';
+  if (currentRestart !== incomingRestart) return incomingRestart > currentRestart ? incoming : current;
   if ((incoming.stage || 0) > (current.stage || 0)) return incoming;
   if ((incoming.stage || 0) < (current.stage || 0)) return current;
   return (incoming.lastReviewed || '') >= (current.lastReviewed || '') ? incoming : current;
@@ -79,12 +82,14 @@ export function mergeState(serverValue, clientValue, date) {
     const newIds = ids([...(left.newIds || []), ...(right.newIds || [])]);
     const reviewIds = ids([...(left.reviewIds || []), ...(right.reviewIds || [])]).filter(id => !newIds.includes(id));
     const doneIds = ids([...(left.doneIds || []), ...(right.doneIds || [])]).filter(id => newIds.includes(id) || reviewIds.includes(id));
+    const notConfidentIds = ids([...(left.notConfidentIds || []), ...(right.notConfidentIds || [])]).filter(id => doneIds.includes(id));
     merged.days[key] = {
       date: key,
       extraReview: Math.min(495, Math.max(0, Math.floor(Number(left.extraReview) || 0), Math.floor(Number(right.extraReview) || 0))),
       newIds,
       reviewIds,
       doneIds,
+      notConfidentIds,
       completed: (newIds.length + reviewIds.length) > 0 && doneIds.length >= newIds.length + reviewIds.length
     };
   }

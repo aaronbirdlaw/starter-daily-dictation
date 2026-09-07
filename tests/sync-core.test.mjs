@@ -35,6 +35,12 @@ newSettings.sync.settingsUpdatedAt = '2026-08-10T11:00:00.000Z';
 assert.deepEqual(mergeState(newSettings, oldSettings, '2026-08-10').settings, newSettings.settings, 'stale phone must not overwrite newer settings');
 assert.equal(normalizeState({ settings: { newCount: 5, reviewCount: 5 } }, '2026-08-10').settings.learningTrack, 'all', 'older states should migrate to the original complete-word-bank route');
 
+const advancedReview = freshState('2026-08-10');
+advancedReview.memory[1] = { learnedAt: '2026-08-01', stage: 5, lastReviewed: '2026-08-10', nextReview: '2026-09-09' };
+const restartedReview = structuredClone(advancedReview);
+restartedReview.memory[1] = { learnedAt: '2026-08-01', stage: 0, lastReviewed: '2026-08-10', nextReview: '2026-08-11', restartedAt: '2026-08-10T10:00:00.000Z' };
+assert.deepEqual(mergeState(advancedReview, restartedReview, '2026-08-10').memory[1], restartedReview.memory[1], 'a newer not-confident restart must win over stale higher review stages');
+
 const olderClock = freshState('2026-08-10');
 olderClock.sync.previewClock = { offset: 4, updatedAt: '2026-08-10T10:00:00.000Z' };
 const newerClock = structuredClone(olderClock);
