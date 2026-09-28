@@ -1,4 +1,4 @@
-import { codeHash, freshState, mergeState, normalizeState, verifiesImport } from '../lib/sync-core.mjs';
+import { codeHash, freshState, mergeBooks, mergeState, normalizeState, verifiesImport } from '../lib/sync-core.mjs';
 
 const json = (value, status = 200) => new Response(JSON.stringify(value), {
   status,
@@ -52,6 +52,7 @@ export async function onRequestPost({ request, env }) {
     ? freshState(date, serverState.sync.generation + 1)
     : mergeState(serverState, body.state, date);
   if (operation === 'reset') {
+    nextState.books = mergeBooks(serverState.books, clientState.books);
     const resetAt = new Date().toISOString();
     nextState.sync.settingsUpdatedAt = resetAt;
     if (clientState.sync.previewClock) {

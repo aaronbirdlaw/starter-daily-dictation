@@ -32,7 +32,7 @@ oldSettings.sync.settingsUpdatedAt = '2026-08-10T10:00:00.000Z';
 const newSettings = structuredClone(oldSettings);
 newSettings.settings = { newCount: 8, reviewCount: 12, learningTrack: 'themes' };
 newSettings.sync.settingsUpdatedAt = '2026-08-10T11:00:00.000Z';
-assert.deepEqual(mergeState(newSettings, oldSettings, '2026-08-10').settings, newSettings.settings, 'stale phone must not overwrite newer settings');
+assert.deepEqual(mergeState(newSettings, oldSettings, '2026-08-10').settings, { ...newSettings.settings, activeBook: 'starter' }, 'stale phone must not overwrite newer settings');
 assert.equal(normalizeState({ settings: { newCount: 5, reviewCount: 5 } }, '2026-08-10').settings.learningTrack, 'all', 'older states should migrate to the original complete-word-bank route');
 
 const advancedReview = freshState('2026-08-10');
