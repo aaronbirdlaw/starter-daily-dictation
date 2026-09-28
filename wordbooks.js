@@ -46,7 +46,7 @@
     document.querySelector('#wordTotal').textContent=bookIds(store,viewedBookId).length;
     document.querySelector('#bookDetailBar').classList.toggle('hidden',!detailMode);
     document.querySelector('#bookDetailHint').textContent=detailMode
-      ?`正在查看“${bookName(viewedBookId)}”；今日新词仍来自“${bookName(selected)}”。`:'';
+      ?`正在查看“${bookName(viewedBookId)}”；今日听写仍使用“${bookName(selected)}”。`:'';
     document.querySelector('#saveImportedWords').disabled=selected==='starter';
     document.querySelector('#saveScannedWords').disabled=selected==='starter';
     document.querySelector('#importTargetHint').textContent=selected==='starter'
@@ -58,7 +58,7 @@
     const route=document.querySelector('#learningTrack');
     if(route){route.disabled=selected!=='starter';route.parentElement.querySelector('.track-hint').textContent=selected==='starter'
       ?'主题内的新词会优先进入听写；已开始学习的词仍按原有记忆曲线复习。'
-      :'主题优先只适用于 Starter；当前新词来自选中的词库。'}
+      :'主题优先只适用于 Starter；当前新词和复习来自选中的词库。'}
   }
   const baseToday=renderToday;renderToday=function(){baseToday();renderBookControls()};
   const baseBank=renderBank;renderBank=function(){renderBookControls();baseBank(viewedBookId)};

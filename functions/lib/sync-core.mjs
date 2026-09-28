@@ -19,6 +19,12 @@ export function normalizeState(value, date) {
   const learningTrack = state.settings?.learningTrack;
   state.version = 4;
   state.days = state.days && typeof state.days === 'object' ? state.days : {};
+  for (const day of Object.values(state.days)) {
+    if (!day || typeof day !== 'object') continue;
+    const completed = new Set(ids(day.doneIds));
+    day.completedNewIds = ids([...(day.completedNewIds || []), ...ids(day.newIds).filter(id => completed.has(id))]);
+    day.completedReviewIds = ids([...(day.completedReviewIds || []), ...ids(day.reviewIds).filter(id => completed.has(id))]);
+  }
   state.memory = state.memory && typeof state.memory === 'object' ? state.memory : {};
   const rawBooks = state.books && typeof state.books === 'object' ? state.books : {};
   state.books = {};
@@ -117,12 +123,16 @@ export function mergeState(serverValue, clientValue, date) {
     const reviewIds = ids([...(left.reviewIds || []), ...(right.reviewIds || [])]).filter(id => !newIds.includes(id));
     const doneIds = ids([...(left.doneIds || []), ...(right.doneIds || [])]).filter(id => newIds.includes(id) || reviewIds.includes(id));
     const notConfidentIds = ids([...(left.notConfidentIds || []), ...(right.notConfidentIds || [])]).filter(id => doneIds.includes(id));
+    const completedNewIds = ids([...(left.completedNewIds || []), ...(right.completedNewIds || []), ...newIds.filter(id => doneIds.includes(id))]);
+    const completedReviewIds = ids([...(left.completedReviewIds || []), ...(right.completedReviewIds || []), ...reviewIds.filter(id => doneIds.includes(id))]);
     merged.days[key] = {
       date: key,
       extraReview: Math.min(495, Math.max(0, Math.floor(Number(left.extraReview) || 0), Math.floor(Number(right.extraReview) || 0))),
       newIds,
       reviewIds,
       doneIds,
+      completedNewIds,
+      completedReviewIds,
       notConfidentIds,
       completed: (newIds.length + reviewIds.length) > 0 && doneIds.length >= newIds.length + reviewIds.length
     };
@@ -139,8 +149,9 @@ export function containsState(targetValue, sourceValue, date) {
   const source = normalizeState(sourceValue, date);
   if (target.sync.generation !== source.sync.generation) return false;
   for (const [day, value] of Object.entries(source.days)) {
-    const completed = new Set((target.days[day]?.doneIds || []).map(Number));
-    if ((value.doneIds || []).some(id => !completed.has(Number(id)))) return false;
+    const completedNew = new Set(target.days[day]?.completedNewIds || []);
+    const completedReview = new Set(target.days[day]?.completedReviewIds || []);
+    if (value.completedNewIds.some(id => !completedNew.has(id)) || value.completedReviewIds.some(id => !completedReview.has(id))) return false;
   }
   for (const [id, value] of Object.entries(source.memory)) {
     if (!target.memory[id] || (target.memory[id].stage || 0) < (value.stage || 0)) return false;

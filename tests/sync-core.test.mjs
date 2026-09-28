@@ -14,6 +14,12 @@ assert.equal(merged.days['2026-08-10'].completed, true, 'merged day should be co
 assert.equal(containsState(merged, base, '2026-08-10'), true, 'merged state should verify the original local import');
 assert.equal(containsState(merged, other, '2026-08-10'), true, 'merged state should verify the other phone import');
 assert.equal(normalizeState(null, '2026-08-10').settings.newCount, 5, 'missing state should use defaults');
+assert.deepEqual(normalizeState(base, '2026-08-10').days['2026-08-10'].completedNewIds, [1], 'legacy daily completions migrate into the persistent archive');
+const switched = structuredClone(base);
+switched.days['2026-08-10'] = { date: '2026-08-10', newIds: [5000000], reviewIds: [], doneIds: [], completedNewIds: [1], completedReviewIds: [], completed: false };
+const switchedMerge = mergeState(base, switched, '2026-08-10');
+assert(switchedMerge.days['2026-08-10'].completedNewIds.includes(1), 'merging a switched bank retains completed Starter words');
+assert(containsState(switched, base, '2026-08-10'), 'verification accepts completed words archived during a bank switch');
 const zeroReviews = freshState('2026-08-10');
 zeroReviews.settings.reviewCount = 0;
 assert.equal(normalizeState(zeroReviews, '2026-08-10').settings.reviewCount, 0, 'zero review limit should remain zero');
