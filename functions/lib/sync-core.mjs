@@ -27,8 +27,9 @@ export function normalizeState(value, date) {
     const words = Array.isArray(book.words) ? book.words : [];
     state.books[id] = {
       id,
-      name: String(book.name || '新词书').slice(0, 60),
+      name: String(book.name || '新词库').slice(0, 60),
       updatedAt: String(book.updatedAt || ''),
+      deletedAt: String(book.deletedAt || ''),
       words: [...new Map(words.filter(item => Number.isSafeInteger(Number(item?.id)) && Number(item.id) >= 0 && typeof item.text === 'string' && item.text.trim()).map(item => [Number(item.id), { id: Number(item.id), text: item.text.trim().slice(0, 120) }])).values()]
     };
   }
@@ -36,7 +37,7 @@ export function normalizeState(value, date) {
     newCount: Number.isFinite(newCount) ? Math.min(20, Math.max(1, newCount)) : 5,
     reviewCount: Number.isFinite(reviewCount) ? Math.min(50, Math.max(0, reviewCount)) : 5,
     learningTrack: learningTrack === 'themes' ? 'themes' : 'all',
-    activeBook: state.books[state.settings?.activeBook] ? state.settings.activeBook : 'starter'
+    activeBook: state.books[state.settings?.activeBook] && !state.books[state.settings.activeBook].deletedAt ? state.settings.activeBook : 'starter'
   };
   state.startedAt = state.startedAt || date;
   state.sync = state.sync && typeof state.sync === 'object' ? state.sync : {};
@@ -75,7 +76,11 @@ export function mergeBooks(left = {}, right = {}) {
     const names = incoming.updatedAt >= current.updatedAt ? incoming : current;
     const words = new Map(current.words.map(word => [word.id, word]));
     for (const word of incoming.words) if (!words.has(word.id)) words.set(word.id, word);
-    merged[id] = { ...structuredClone(names), words: [...words.values()] };
+    merged[id] = {
+      ...structuredClone(names),
+      words: [...words.values()],
+      deletedAt: [current.deletedAt || '', incoming.deletedAt || ''].sort().at(-1)
+    };
   }
   return merged;
 }
@@ -91,6 +96,7 @@ export function mergeState(serverValue, clientValue, date) {
   merged.startedAt = [server.startedAt, client.startedAt].sort()[0];
   const clientSettingsAreNewer = client.sync.settingsUpdatedAt >= server.sync.settingsUpdatedAt;
   merged.settings = structuredClone(clientSettingsAreNewer ? client.settings : server.settings);
+  if (merged.books[merged.settings.activeBook]?.deletedAt) merged.settings.activeBook = 'starter';
   merged.sync.settingsUpdatedAt = clientSettingsAreNewer ? client.sync.settingsUpdatedAt : server.sync.settingsUpdatedAt;
   const serverClock = server.sync.previewClock;
   const clientClock = client.sync.previewClock;
@@ -141,7 +147,8 @@ export function containsState(targetValue, sourceValue, date) {
   }
   for (const [id, book] of Object.entries(source.books)) {
     const found = target.books[id];
-    if (!found || book.words.some(word => !found.words.some(other => other.id === word.id && other.text === word.text))) return false;
+    if (!found || (book.deletedAt && !found.deletedAt) ||
+      book.words.some(word => !found.words.some(other => other.id === word.id && other.text === word.text))) return false;
   }
   return true;
 }
