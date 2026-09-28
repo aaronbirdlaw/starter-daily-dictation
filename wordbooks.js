@@ -134,21 +134,18 @@
     if(!lines.length){report('请先输入至少一个英文词或短语。',true);return}
     const invalid=lines.find(word=>!validWord(word));
     if(invalid){report(`请检查第 ${lines.indexOf(invalid)+1} 行“${invalid}”：仅导入英文词或短语，一行一个。`,true);return}
-    const globalWords=new Map(allWordIds(store).map(id=>[norm(wordFor(store,id)),id]));
     const existing=new Set(book.words.map(item=>norm(item.text)));
-    let added=0,skipped=0,reused=0;
+    let added=0,skipped=0;
     for(const text of lines){
       const key=norm(text);if(!key||existing.has(key)){skipped++;continue}
-      const id=globalWords.get(key)??newWordId();
-      if(globalWords.has(key))reused++;
-      book.words.push({id,text});globalWords.set(key,id);existing.add(key);added++;
+      book.words.push({id:newWordId(),text});existing.add(key);added++;
     }
     if(added){
       markLocalChange();book.updatedAt=nextSettingsUpdatedAt(book.updatedAt);
       ensure(store,true);save();renderToday();renderBank();queueSync();
     }
     input.value='';if(input===ocrInput)document.querySelector('#ocrReview').classList.add('hidden');
-    report(`已导入 ${added} 个，跳过重复 ${skipped} 个。${reused?`其中 ${reused} 个沿用已有词的复习进度。`:''}`);
+    report(`已导入 ${added} 个，跳过重复 ${skipped} 个。`);
   }
   document.querySelector('#saveImportedWords').onclick=()=>importWords(manualInput);
   document.querySelector('#saveScannedWords').onclick=()=>importWords(ocrInput);

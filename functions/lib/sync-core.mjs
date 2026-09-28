@@ -1,4 +1,15 @@
 export const DEFAULT_SETTINGS = { newCount: 5, reviewCount: 5, learningTrack: 'all', activeBook: 'starter' };
+const STARTER_WORD_COUNT = 495;
+
+export function scopedWordId(bookId, id) {
+  let a = 2166136261, b = 16777619;
+  for (const char of `${bookId}:${id}`) {
+    const code = char.charCodeAt(0);
+    a = Math.imul(a ^ code, 16777619) >>> 0;
+    b = Math.imul(b ^ code, 2246822519) >>> 0;
+  }
+  return 2 ** 52 + 2 ** 20 + (a & 0x7ffff) * 2 ** 32 + b;
+}
 
 export function freshState(date, generation = 0) {
   return {
@@ -38,6 +49,11 @@ export function normalizeState(value, date) {
       deletedAt: String(book.deletedAt || ''),
       words: [...new Map(words.filter(item => Number.isSafeInteger(Number(item?.id)) && Number(item.id) >= 0 && typeof item.text === 'string' && item.text.trim()).map(item => [Number(item.id), { id: Number(item.id), text: item.text.trim().slice(0, 120) }])).values()]
     };
+  }
+  const wordCounts = new Map();
+  for (const book of Object.values(state.books)) for (const word of book.words) wordCounts.set(word.id, (wordCounts.get(word.id) || 0) + 1);
+  for (const [bookId, book] of Object.entries(state.books)) for (const word of book.words) {
+    if (word.id < STARTER_WORD_COUNT || wordCounts.get(word.id) > 1) word.id = scopedWordId(bookId, word.id);
   }
   state.settings = {
     newCount: Number.isFinite(newCount) ? Math.min(20, Math.max(1, newCount)) : 5,
