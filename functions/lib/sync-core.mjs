@@ -1,10 +1,11 @@
-export const DEFAULT_SETTINGS = { newCount: 5, reviewCount: 5, learningTrack: 'all' };
+export const DEFAULT_SETTINGS = { newCount: 5, reviewCount: 5, learningTrack: 'all', activeBook: 'starter' };
 
 export function freshState(date, generation = 0) {
   return {
     version: 4,
     days: {},
     memory: {},
+    books: {},
     settings: { ...DEFAULT_SETTINGS },
     startedAt: date,
     sync: { generation, settingsUpdatedAt: `${date}T00:00:00.000Z` }
@@ -19,10 +20,24 @@ export function normalizeState(value, date) {
   state.version = 4;
   state.days = state.days && typeof state.days === 'object' ? state.days : {};
   state.memory = state.memory && typeof state.memory === 'object' ? state.memory : {};
+  const rawBooks = state.books && typeof state.books === 'object' ? state.books : {};
+  state.books = {};
+  for (const [id, book] of Object.entries(rawBooks)) {
+    if (!/^book-[a-z0-9-]{8,80}$/.test(id) || !book || typeof book !== 'object') continue;
+    const words = Array.isArray(book.words) ? book.words : [];
+    state.books[id] = {
+      id,
+      name: String(book.name || '新词库').slice(0, 60),
+      updatedAt: String(book.updatedAt || ''),
+      deletedAt: String(book.deletedAt || ''),
+      words: [...new Map(words.filter(item => Number.isSafeInteger(Number(item?.id)) && Number(item.id) >= 0 && typeof item.text === 'string' && item.text.trim()).map(item => [Number(item.id), { id: Number(item.id), text: item.text.trim().slice(0, 120) }])).values()]
+    };
+  }
   state.settings = {
     newCount: Number.isFinite(newCount) ? Math.min(20, Math.max(1, newCount)) : 5,
     reviewCount: Number.isFinite(reviewCount) ? Math.min(50, Math.max(0, reviewCount)) : 5,
-    learningTrack: learningTrack === 'themes' ? 'themes' : 'all'
+    learningTrack: learningTrack === 'themes' ? 'themes' : 'all',
+    activeBook: state.books[state.settings?.activeBook] && !state.books[state.settings.activeBook].deletedAt ? state.settings.activeBook : 'starter'
   };
   state.startedAt = state.startedAt || date;
   state.sync = state.sync && typeof state.sync === 'object' ? state.sync : {};
@@ -53,6 +68,23 @@ function mergeMemory(current, incoming) {
   return (incoming.lastReviewed || '') >= (current.lastReviewed || '') ? incoming : current;
 }
 
+export function mergeBooks(left = {}, right = {}) {
+  const merged = structuredClone(left);
+  for (const [id, incoming] of Object.entries(right)) {
+    const current = merged[id];
+    if (!current) { merged[id] = structuredClone(incoming); continue; }
+    const names = incoming.updatedAt >= current.updatedAt ? incoming : current;
+    const words = new Map(current.words.map(word => [word.id, word]));
+    for (const word of incoming.words) if (!words.has(word.id)) words.set(word.id, word);
+    merged[id] = {
+      ...structuredClone(names),
+      words: [...words.values()],
+      deletedAt: [current.deletedAt || '', incoming.deletedAt || ''].sort().at(-1)
+    };
+  }
+  return merged;
+}
+
 export function mergeState(serverValue, clientValue, date) {
   const server = normalizeState(serverValue, date);
   const client = normalizeState(clientValue, date);
@@ -60,9 +92,11 @@ export function mergeState(serverValue, clientValue, date) {
     return structuredClone(server.sync.generation > client.sync.generation ? server : client);
   }
   const merged = normalizeState(server, date);
+  merged.books = mergeBooks(server.books, client.books);
   merged.startedAt = [server.startedAt, client.startedAt].sort()[0];
   const clientSettingsAreNewer = client.sync.settingsUpdatedAt >= server.sync.settingsUpdatedAt;
   merged.settings = structuredClone(clientSettingsAreNewer ? client.settings : server.settings);
+  if (merged.books[merged.settings.activeBook]?.deletedAt) merged.settings.activeBook = 'starter';
   merged.sync.settingsUpdatedAt = clientSettingsAreNewer ? client.sync.settingsUpdatedAt : server.sync.settingsUpdatedAt;
   const serverClock = server.sync.previewClock;
   const clientClock = client.sync.previewClock;
@@ -110,6 +144,11 @@ export function containsState(targetValue, sourceValue, date) {
   }
   for (const [id, value] of Object.entries(source.memory)) {
     if (!target.memory[id] || (target.memory[id].stage || 0) < (value.stage || 0)) return false;
+  }
+  for (const [id, book] of Object.entries(source.books)) {
+    const found = target.books[id];
+    if (!found || (book.deletedAt && !found.deletedAt) ||
+      book.words.some(word => !found.words.some(other => other.id === word.id && other.text === word.text))) return false;
   }
   return true;
 }

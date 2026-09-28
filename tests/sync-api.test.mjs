@@ -69,4 +69,21 @@ const formResponse = await onRequestPost({ request: formRequest, env: { DB: db }
 assert(formResponse.ok, 'form-encoded Android fallback should be accepted by the sync API');
 assert((await formResponse.json()).revision === 2, 'form-encoded read should return the current family revision');
 
-console.log('PASS: repeated family creation safely reconnects and merges progress');
+const bookId='book-12345678';
+const bookState=makeState([1]);
+bookState.books={ [bookId]: { id:bookId,name:'New book',updatedAt:'2026-08-16T01:00:00.000Z',words:[{id:5000000,text:'sunflower'}] } };
+bookState.settings.activeBook=bookId;
+const bookResponse=await call(db,bookState,'book-phone');
+assert(bookResponse.ok,'custom book should sync');
+assert((await bookResponse.json()).state.books[bookId].words.length===1,'server should retain imported word');
+const resetRequest=new Request('https://starter-daily-dictation.pages.dev/api/sync',{
+  method:'POST',headers:{'content-type':'application/json'},
+  body:JSON.stringify({code:'same-family-code',operation:'reset',state:makeState([1]),date,deviceId:'older-phone'})
+});
+const resetResponse=await onRequestPost({request:resetRequest,env:{DB:db}});
+assert(resetResponse.ok,'reset should succeed');
+const resetState=(await resetResponse.json()).state;
+assert(Object.keys(resetState.memory).length===0,'reset should clear learning memory');
+assert(resetState.books[bookId].words.length===1,'reset should preserve imported word book');
+
+console.log('PASS: family creation, custom book sync, and reset catalog preservation');
