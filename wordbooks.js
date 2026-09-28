@@ -4,6 +4,7 @@
   const importPanel=document.querySelector('#bookImport');
   const manualInput=document.querySelector('#importWords');
   const ocrInput=document.querySelector('#ocrWords');
+  let viewedBookId=store.settings.activeBook||'starter',detailMode=false;
   const bookName=id=>id==='starter'?'Starter 词库':store.books[id]?.name||'新词库';
   const activeBooks=()=>Object.entries(store.books||{}).filter(([,book])=>!book.deletedAt);
   function report(message,error=false,target='#bookImportStatus'){
@@ -12,24 +13,40 @@
   function renderManageList(){
     const list=document.querySelector('#bookManageList');list.replaceChildren();
     const starter=document.createElement('div');starter.className='book-manage-row';
-    starter.textContent='Starter 词库 · 内置词库，不可删除';list.append(starter);
+    const starterName=document.createElement('div');starterName.textContent='Starter 词库 · 内置词库';
+    const starterCount=document.createElement('span');starterCount.textContent=`${bookIds(store,'starter').length} 个词条`;
+    const starterActions=document.createElement('div');starterActions.className='book-manage-actions';
+    starterActions.append(viewButton('starter'));starter.append(starterName,starterCount,starterActions);list.append(starter);
     for(const [id,book] of activeBooks()){
       const row=document.createElement('div');row.className='book-manage-row';
       const name=document.createElement('div');name.textContent=book.name;
       const count=document.createElement('span');count.textContent=`${book.words.length} 个词条`;
+      const actions=document.createElement('div');actions.className='book-manage-actions';
       const button=document.createElement('button');button.type='button';button.textContent='删除词库';
       button.setAttribute('aria-label',`删除词库 ${book.name}`);button.onclick=()=>deleteBook(id);
-      row.append(name,count,button);list.append(row);
+      actions.append(viewButton(id),button);row.append(name,count,actions);list.append(row);
     }
+  }
+  function viewButton(id){
+    const button=document.createElement('button');button.type='button';button.className='view-book';
+    button.textContent='查看词库';button.setAttribute('aria-label',`查看词库 ${bookName(id)}`);
+    button.onclick=()=>viewBook(id);return button;
   }
   function renderBookControls(){
     const selected=store.settings.activeBook||'starter';select.replaceChildren();
+    if(viewedBookId!=='starter'&&(!store.books[viewedBookId]||store.books[viewedBookId].deletedAt)){
+      viewedBookId=selected;detailMode=false;
+    }
     for(const id of ['starter',...activeBooks().map(([id])=>id)]){
       const option=document.createElement('option');option.value=id;option.textContent=bookName(id);select.append(option);
     }
     select.value=selected;
-    document.querySelector('#bookTitle').textContent=selected==='starter'?'完整词库':bookName(selected);
-    document.querySelector('#wordTotal').textContent=bookIds(store).length;
+    document.querySelector('#bookTitle').textContent=detailMode?`${bookName(viewedBookId)} · 词库详情`
+      :selected==='starter'?'完整词库':bookName(selected);
+    document.querySelector('#wordTotal').textContent=bookIds(store,viewedBookId).length;
+    document.querySelector('#bookDetailBar').classList.toggle('hidden',!detailMode);
+    document.querySelector('#bookDetailHint').textContent=detailMode
+      ?`正在查看“${bookName(viewedBookId)}”；今日新词仍来自“${bookName(selected)}”。`:'';
     document.querySelector('#saveImportedWords').disabled=selected==='starter';
     document.querySelector('#saveScannedWords').disabled=selected==='starter';
     document.querySelector('#importTargetHint').textContent=selected==='starter'
@@ -44,18 +61,20 @@
       :'主题优先只适用于 Starter；当前新词来自选中的词库。'}
   }
   const baseToday=renderToday;renderToday=function(){baseToday();renderBookControls()};
-  const baseBank=renderBank;renderBank=function(){renderBookControls();baseBank()};
+  const baseBank=renderBank;renderBank=function(){renderBookControls();baseBank(viewedBookId)};
   renderBookControls();
   function updateActiveBook(id){
     if(id!=='starter'&&(!store.books[id]||store.books[id].deletedAt))return;
     if(id===store.settings.activeBook)return;
+    viewedBookId=id;detailMode=false;
     markLocalChange();store.settings.activeBook=id;
     store.sync.settingsUpdatedAt=nextSettingsUpdatedAt(store.sync.settingsUpdatedAt);
     const current=day();current.newIds=current.newIds.filter(wordId=>current.doneIds.includes(wordId));
-    ensure(store,true);save();renderToday();renderBank();queueSync();
+    ensure(store,true);save();renderToday();renderBank();showPanel(null);queueSync();
   }
   select.onchange=()=>updateActiveBook(select.value);
   function showPanel(which){
+    if(which){viewedBookId=store.settings.activeBook;detailMode=false;renderBookControls()}
     manage.classList.toggle('hidden',which!=='manage');importPanel.classList.toggle('hidden',which!=='import');
     document.querySelector('#bankBrowse').classList.toggle('hidden',!!which);
     document.querySelector('#showBookManage').setAttribute('aria-expanded',String(which==='manage'));
@@ -63,6 +82,14 @@
   }
   document.querySelector('#showBookManage').onclick=()=>showPanel(manage.classList.contains('hidden')?'manage':null);
   document.querySelector('#showBookImport').onclick=()=>showPanel(importPanel.classList.contains('hidden')?'import':null);
+  document.querySelector('#backToManage').onclick=()=>showPanel('manage');
+  function viewBook(id){
+    if(id!=='starter'&&(!store.books[id]||store.books[id].deletedAt))return;
+    showPanel(null);viewedBookId=id;detailMode=true;
+    query='';filter='all';document.querySelector('#search').value='';
+    document.querySelectorAll('[data-filter]').forEach(button=>button.classList.toggle('active',button.dataset.filter==='all'));
+    renderBank();document.querySelector('#bookTitle').scrollIntoView?.({block:'start'});
+  }
   document.querySelector('#createBook').onclick=()=>{
     const field=document.querySelector('#newBookName');
     const name=field.value.trim().replace(/\s+/g,' ');
@@ -73,6 +100,7 @@
     const id=`book-${globalThis.crypto?.randomUUID?.()||`${Date.now()}-${Math.random().toString(36).slice(2)}`}`;
     markLocalChange();store.books[id]={id,name:name.slice(0,60),updatedAt:nowIso(),words:[]};
     store.settings.activeBook=id;store.sync.settingsUpdatedAt=nextSettingsUpdatedAt(store.sync.settingsUpdatedAt);
+    viewedBookId=id;detailMode=false;
     const current=day();current.newIds=current.newIds.filter(wordId=>current.doneIds.includes(wordId));
     ensure(store,true);save();renderToday();renderBank();queueSync();field.value='';
     report(`已增加“${name}”。可切换到“录入单词”添加内容。`,false,'#bookManageStatus');
@@ -85,6 +113,7 @@
       store.settings.activeBook='starter';store.sync.settingsUpdatedAt=nextSettingsUpdatedAt(store.sync.settingsUpdatedAt);
       const current=day();current.newIds=current.newIds.filter(wordId=>current.doneIds.includes(wordId));
     }
+    if(viewedBookId===id){viewedBookId=store.settings.activeBook;detailMode=false}
     ensure(store,true);save();renderToday();renderBank();queueSync();
     report(`已删除“${book.name}”，已学单词和复习记录仍会保留。`,false,'#bookManageStatus');
   }
