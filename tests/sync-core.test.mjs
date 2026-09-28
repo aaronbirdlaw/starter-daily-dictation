@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { containsState, freshState, mergeState, normalizeState, verifiesImport } from '../functions/lib/sync-core.mjs';
+import { containsState, freshState, mergeState, normalizeState, scopedWordId, verifiesImport } from '../functions/lib/sync-core.mjs';
 
 const base = freshState('2026-08-10');
 base.days['2026-08-10'] = { date: '2026-08-10', newIds: [1, 2], reviewIds: [], doneIds: [1], completed: false };
@@ -14,6 +14,19 @@ assert.equal(merged.days['2026-08-10'].completed, true, 'merged day should be co
 assert.equal(containsState(merged, base, '2026-08-10'), true, 'merged state should verify the original local import');
 assert.equal(containsState(merged, other, '2026-08-10'), true, 'merged state should verify the other phone import');
 assert.equal(normalizeState(null, '2026-08-10').settings.newCount, 5, 'missing state should use defaults');
+const legacyBook = structuredClone(base);
+legacyBook.books = { 'book-legacy01': { id: 'book-legacy01', name: '1000 词', words: [{ id: 1, text: 'about' }], updatedAt: '2026-08-10T00:00:00.000Z' } };
+legacyBook.settings.activeBook = 'book-legacy01';
+const separateBook = normalizeState(legacyBook, '2026-08-10');
+assert.equal(separateBook.books['book-legacy01'].words[0].id, scopedWordId('book-legacy01', 1), 'legacy shared word receives a bank-specific ID');
+assert.equal(normalizeState(separateBook, '2026-08-10').books['book-legacy01'].words[0].id, separateBook.books['book-legacy01'].words[0].id, 'word ID migration is idempotent');
+assert.equal(mergeState(legacyBook, separateBook, '2026-08-10').books['book-legacy01'].words.length, 1, 'syncing old and new clients does not duplicate migrated words');
+assert.deepEqual(normalizeState(base, '2026-08-10').days['2026-08-10'].completedNewIds, [1], 'legacy daily completions migrate into the persistent archive');
+const switched = structuredClone(base);
+switched.days['2026-08-10'] = { date: '2026-08-10', newIds: [5000000], reviewIds: [], doneIds: [], completedNewIds: [1], completedReviewIds: [], completed: false };
+const switchedMerge = mergeState(base, switched, '2026-08-10');
+assert(switchedMerge.days['2026-08-10'].completedNewIds.includes(1), 'merging a switched bank retains completed Starter words');
+assert(containsState(switched, base, '2026-08-10'), 'verification accepts completed words archived during a bank switch');
 const zeroReviews = freshState('2026-08-10');
 zeroReviews.settings.reviewCount = 0;
 assert.equal(normalizeState(zeroReviews, '2026-08-10').settings.reviewCount, 0, 'zero review limit should remain zero');

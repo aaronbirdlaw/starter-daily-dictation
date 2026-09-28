@@ -1,4 +1,15 @@
 export const DEFAULT_SETTINGS = { newCount: 5, reviewCount: 5, learningTrack: 'all', activeBook: 'starter' };
+const STARTER_WORD_COUNT = 495;
+
+export function scopedWordId(bookId, id) {
+  let a = 2166136261, b = 16777619;
+  for (const char of `${bookId}:${id}`) {
+    const code = char.charCodeAt(0);
+    a = Math.imul(a ^ code, 16777619) >>> 0;
+    b = Math.imul(b ^ code, 2246822519) >>> 0;
+  }
+  return 2 ** 52 + 2 ** 20 + (a & 0x7ffff) * 2 ** 32 + b;
+}
 
 export function freshState(date, generation = 0) {
   return {
@@ -19,6 +30,12 @@ export function normalizeState(value, date) {
   const learningTrack = state.settings?.learningTrack;
   state.version = 4;
   state.days = state.days && typeof state.days === 'object' ? state.days : {};
+  for (const day of Object.values(state.days)) {
+    if (!day || typeof day !== 'object') continue;
+    const completed = new Set(ids(day.doneIds));
+    day.completedNewIds = ids([...(day.completedNewIds || []), ...ids(day.newIds).filter(id => completed.has(id))]);
+    day.completedReviewIds = ids([...(day.completedReviewIds || []), ...ids(day.reviewIds).filter(id => completed.has(id))]);
+  }
   state.memory = state.memory && typeof state.memory === 'object' ? state.memory : {};
   const rawBooks = state.books && typeof state.books === 'object' ? state.books : {};
   state.books = {};
@@ -32,6 +49,11 @@ export function normalizeState(value, date) {
       deletedAt: String(book.deletedAt || ''),
       words: [...new Map(words.filter(item => Number.isSafeInteger(Number(item?.id)) && Number(item.id) >= 0 && typeof item.text === 'string' && item.text.trim()).map(item => [Number(item.id), { id: Number(item.id), text: item.text.trim().slice(0, 120) }])).values()]
     };
+  }
+  const wordCounts = new Map();
+  for (const book of Object.values(state.books)) for (const word of book.words) wordCounts.set(word.id, (wordCounts.get(word.id) || 0) + 1);
+  for (const [bookId, book] of Object.entries(state.books)) for (const word of book.words) {
+    if (word.id < STARTER_WORD_COUNT || wordCounts.get(word.id) > 1) word.id = scopedWordId(bookId, word.id);
   }
   state.settings = {
     newCount: Number.isFinite(newCount) ? Math.min(20, Math.max(1, newCount)) : 5,
@@ -117,12 +139,16 @@ export function mergeState(serverValue, clientValue, date) {
     const reviewIds = ids([...(left.reviewIds || []), ...(right.reviewIds || [])]).filter(id => !newIds.includes(id));
     const doneIds = ids([...(left.doneIds || []), ...(right.doneIds || [])]).filter(id => newIds.includes(id) || reviewIds.includes(id));
     const notConfidentIds = ids([...(left.notConfidentIds || []), ...(right.notConfidentIds || [])]).filter(id => doneIds.includes(id));
+    const completedNewIds = ids([...(left.completedNewIds || []), ...(right.completedNewIds || []), ...newIds.filter(id => doneIds.includes(id))]);
+    const completedReviewIds = ids([...(left.completedReviewIds || []), ...(right.completedReviewIds || []), ...reviewIds.filter(id => doneIds.includes(id))]);
     merged.days[key] = {
       date: key,
       extraReview: Math.min(495, Math.max(0, Math.floor(Number(left.extraReview) || 0), Math.floor(Number(right.extraReview) || 0))),
       newIds,
       reviewIds,
       doneIds,
+      completedNewIds,
+      completedReviewIds,
       notConfidentIds,
       completed: (newIds.length + reviewIds.length) > 0 && doneIds.length >= newIds.length + reviewIds.length
     };
@@ -139,8 +165,9 @@ export function containsState(targetValue, sourceValue, date) {
   const source = normalizeState(sourceValue, date);
   if (target.sync.generation !== source.sync.generation) return false;
   for (const [day, value] of Object.entries(source.days)) {
-    const completed = new Set((target.days[day]?.doneIds || []).map(Number));
-    if ((value.doneIds || []).some(id => !completed.has(Number(id)))) return false;
+    const completedNew = new Set(target.days[day]?.completedNewIds || []);
+    const completedReview = new Set(target.days[day]?.completedReviewIds || []);
+    if (value.completedNewIds.some(id => !completedNew.has(id)) || value.completedReviewIds.some(id => !completedReview.has(id))) return false;
   }
   for (const [id, value] of Object.entries(source.memory)) {
     if (!target.memory[id] || (target.memory[id].stage || 0) < (value.stage || 0)) return false;
