@@ -3,7 +3,7 @@ const html=fs.readFileSync(require('node:path').join(__dirname,'../index.html'),
 const standard='at pat map mad dam rag lab sat man sap add jam wag jab mat fan rap bad ram nag rat can cap dad sam gag bat pan gap had yam lag cat ran lap fad pam cab'.split(' ');
 const bonus='bell lack sock chop chess sell pack duck chat check fell kick luck chap shell yell sick puck chug shut tell lick tuck chip ship importance elephant air'.split(' ');
 const words=[...standard,...bonus].map((text,i)=>({id:1000000+i,text}));
-const seed={version:4,settings:{newCount:5,reviewCount:5,activeBook:'book-beetest1',learningTrack:'all'},days:{},memory:{0:{stage:4,learnedAt:'2020-01-01',nextReview:'2020-01-02'}},books:{'book-beetest1':{id:'book-beetest1',name:'Spelling Bee',words}},sync:{generation:0},startedAt:'2020-01-01'};
+const seed={version:4,settings:{newCount:5,reviewCount:5,activeBook:'book-beetest1',learningTrack:'all',beeRatio:'standard'},days:{},memory:{0:{stage:4,learnedAt:'2020-01-01',nextReview:'2020-01-02'}},books:{'book-beetest1':{id:'book-beetest1',name:'Spelling Bee',words}},sync:{generation:0},startedAt:'2020-01-01'};
 function open(s){return new JSDOM(html,{url:'https://feature-spelling-bee-mix.starter-daily-dictation.pages.dev',runScripts:'dangerously',beforeParse(w){w.localStorage.setItem('starter-dictation-v2',JSON.stringify(s))}})}
 function state(d){return JSON.parse(d.window.localStorage.getItem('starter-dictation-v2'))}
 function bonusCount(ids){return ids.filter(id=>id>=1000000+standard.length).length}

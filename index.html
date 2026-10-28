@@ -47,6 +47,13 @@
   .sound,.bank-word button{display:grid;place-items:center;padding:0;line-height:1;white-space:nowrap;flex-shrink:0;touch-action:manipulation}
   .sound svg,.bank-word button svg{display:block;width:18px;height:18px;pointer-events:none}
   .speech-status{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(92px + env(safe-area-inset-bottom,0px));z-index:10;width:min(calc(100% - 24px),470px);padding:10px 14px;background:#173a2df2;color:#fff;font-size:14px;line-height:1.5;border-radius:8px;pointer-events:none}
+  .bee-ratio-panel{margin-top:16px;border-top:1px solid var(--line);padding-top:12px}
+  .bee-ratio-toggle{display:flex;align-items:center;gap:12px;min-height:48px;font-size:16px;cursor:pointer}
+  .bee-ratio-toggle input{appearance:none;-webkit-appearance:none;position:relative;width:48px;height:28px;flex:0 0 48px;border:1px solid #8c9d92;border-radius:20px;background:#d6ded7;margin:0;cursor:pointer}
+  .bee-ratio-toggle input:checked{background:var(--forest);border-color:var(--forest)}
+  .bee-ratio-toggle input:after{content:'';position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;box-shadow:0 1px 3px #0003}
+  .bee-ratio-toggle input:checked:after{left:23px}.bee-ratio-toggle input:focus-visible{outline:3px solid var(--orange);outline-offset:3px}
+  #beeRatioHint{font-size:14px;line-height:1.7;color:#62736a;margin:8px 0}
 </style>
 </head>
 <body>
@@ -120,6 +127,8 @@ function pick(s,pool,count){return [...pool].sort((a,b)=>spellingLength(wordFor(
 const BEE_STANDARD=new Set(`at pat map mad dam rag lab sat man sap add jam wag jab mat fan rap bad ram nag rat can cap dad sam gag bat pan gap had yam lag cat ran lap fad pam cab tan tap pad tag tab fat van zap sag dab hat nap sad ham bag gab big lid sit yip win dill fig rid wit him mix gill pig sid mitt dim six hill wig it sip Jim fix Jill dig fit dip Kim nix will rig bit hip rim ill kill hid hit lip Tim fill pill bid kit rip in sill kid lit tip pin mill did pit zip bin bill hot not bop ox rob fog cot pot hop box mob log dot rot mop fox sob jog got tot pop job cob hog lot top lop bob dog bug bun gut pup hen yet mug gun rut bed ten net dug sun put led set pet tug pun cub fed met vet jug nut sub wed get leg hug but hub red bet beg rug jut rub pen wet egg fun hut tub men jet run cut up den let`.toLowerCase().split(/\s+/));
 const isBeeBook=s=>s.settings.activeBook!=='starter'&&s.books?.[s.settings.activeBook]?.name.trim().toLowerCase()==='spelling bee';
 const isBeeBonus=(s,id)=>!BEE_STANDARD.has(wordFor(s,id).trim().toLowerCase());
+const beeBonusShare=s=>s.settings.beeRatio==='standard'?.3:.5;
+const beeRatioLabel=s=>s.settings.beeRatio==='standard'?'7:3':'1:1';
 function beeRandomRank(s,id){
   // A seeded daily shuffle gives both phones the same random order and survives reloads.
   let hash=2166136261;
@@ -130,10 +139,13 @@ function beeRandomRank(s,id){
 function pickBeeWords(s,pool,count){
   const standard=pool.filter(id=>!isBeeBonus(s,id)).sort((a,b)=>beeRandomRank(s,a)-beeRandomRank(s,b)||a-b);
   const bonus=pick(s,pool.filter(id=>isBeeBonus(s,id)),pool.length);
-  const learnedIds=bookIds(s).filter(id=>s.memory[id]);
+  // Count only today's actual new learning: changing ratios must not trigger catch-up
+  // for the old ratio's entire learning history.
+  const learnedIds=bookIds(s).filter(id=>s.memory[id]?.learnedAt===localDate());
   const learnedBonus=learnedIds.filter(id=>isBeeBonus(s,id)).length;
   const available=Math.min(count,pool.length);
-  let bonusCount=Math.round((learnedIds.length+available)*.3)-learnedBonus;
+  const share=beeBonusShare(s),rounding=Number(localDate().replaceAll('-',''))%2===0?.5:0;
+  let bonusCount=Math.floor((learnedIds.length+available)*share+rounding)-learnedBonus;
   bonusCount=Math.max(0,Math.min(available,bonusCount));
   // For batches of two or more, show both groups while both have unseen words.
   if(available>=2&&standard.length&&bonus.length)bonusCount=Math.max(1,Math.min(available-1,bonusCount));
@@ -142,7 +154,7 @@ function pickBeeWords(s,pool,count){
   chosenBonus.push(...bonus.slice(chosenBonus.length,chosenBonus.length+Math.max(0,available-chosenBonus.length-chosenStandard.length)));
   const result=[];
   while(chosenStandard.length||chosenBonus.length){
-    const needBonus=Math.round((learnedIds.length+result.length+1)*.3)>learnedBonus+result.filter(id=>isBeeBonus(s,id)).length;
+    const needBonus=Math.floor((learnedIds.length+result.length+1)*share+rounding)>learnedBonus+result.filter(id=>isBeeBonus(s,id)).length;
     result.push((needBonus&&chosenBonus.length||!chosenStandard.length)?chosenBonus.shift():chosenStandard.shift());
   }
   return result;
@@ -152,7 +164,8 @@ function migrate(s){s=s&&typeof s==='object'?s:empty();s.days=s.days||{};const n
 const migrateStarter=migrate;
 function scopedWordId(bookId,id){let a=2166136261,b=16777619;for(const char of `${bookId}:${id}`){const code=char.charCodeAt(0);a=Math.imul(a^code,16777619)>>>0;b=Math.imul(b^code,2246822519)>>>0}return 2**52+2**20+(a&0x7ffff)*2**32+b}
 migrate=function(value){
-  const activeBook=value?.settings?.activeBook,s=migrateStarter(value);
+  const activeBook=value?.settings?.activeBook,beeRatio=value?.settings?.beeRatio,s=migrateStarter(value);
+  s.settings.beeRatio=beeRatio==='standard'?'standard':'equal';
   s.books=s.books&&typeof s.books==='object'?s.books:{};
   s.settings.activeBook=activeBook&&s.books[activeBook]&&!s.books[activeBook].deletedAt?activeBook:'starter';
   const counts=new Map();for(const book of Object.values(s.books))for(const entry of book.words||[])counts.set(entry.id,(counts.get(entry.id)||0)+1);
@@ -307,7 +320,7 @@ document.querySelector('#reviewBacklog').classList.toggle('hidden',!backlog);
 document.querySelector('#backlogText').textContent=`待安排复习 ${backlog} 个，已保留在记忆库中，不计入今日任务。完成今天的任务即可休息，也可自选继续复习。`;
 document.querySelector('#continueReview').classList.toggle('hidden',!d.completed||!backlog);
 document.querySelector('#continueReview').textContent=`继续复习 ${Math.min(5,backlog)} 个`;
-if(isBeeBook(store)&&d.newIds.length){const bonus=d.newIds.filter(id=>isBeeBonus(store,id)).length;document.querySelector('#heroCopy').textContent+=` 今日新词：标准词 ${d.newIds.length-bonus} 个，Bonus ${bonus} 个；累计按约 7:3 安排。`}
+if(isBeeBook(store)&&d.newIds.length){const bonus=d.newIds.filter(id=>isBeeBonus(store,id)).length;document.querySelector('#heroCopy').textContent+=` 今日新词：标准词 ${d.newIds.length-bonus} 个，Bonus ${bonus} 个；目标比例 ${beeRatioLabel(store)}（已完成项目保留）。`}
 document.querySelector('#ring').style.setProperty('--p',`${all.length?d.doneIds.length/all.length*360:0}deg`);document.querySelector('#notice').classList.toggle('hidden',!!d.reviewIds.length);document.querySelector('#complete').classList.toggle('hidden',!d.completed);document.querySelector('#rows').innerHTML=all.map((id,i)=>{const done=d.doneIds.includes(id),review=d.reviewIds.includes(id);return `<div class="word-row ${done?'done':''}"><span class="idx">${String(i+1).padStart(2,'0')}</span><button class="sound" data-say="${id}" aria-label="播放第${i+1}个单词">${SPEAKER_ICON}</button><span class="kind ${review?'review':'new'}">${review?'复习':'新词'}</span><div class="answer"><span class="word ${done?'crossed':''}">${escapeHtml(wordFor(store,id))}</span>${done?'<span class="feedback right">✓ 已完成</span>':''}</div>${done?'<span class="done-dot">✓</span>':`<span class="actions"><button class="know" data-know="${id}">我会了</button></span>`}</div>`}).join('');bindRows();updateStats()}
 function bindRows(){document.querySelectorAll('#rows .word-row').forEach((row,index)=>{const id=ids()[index];if(day().notConfidentIds?.includes(id))row.querySelector('.feedback').textContent='↻ 已安排下一轮复习'});document.querySelectorAll('[data-say]').forEach(b=>b.onclick=()=>say(wordFor(store,+b.dataset.say)));document.querySelectorAll('[data-know]').forEach(b=>{const id=+b.dataset.know;b.onclick=()=>completeWord(id);if(day().reviewIds.includes(id)){const retry=document.createElement('button');retry.className='know not-confident';retry.dataset.notConfident=id;retry.textContent='掌握不熟练';retry.setAttribute('aria-label',`第${[...ids()].indexOf(id)+1}个词掌握不熟练，安排下一轮复习`);retry.onclick=()=>completeWord(id,true);b.after(retry)}})}
 function renderTestClock(){if(!IS_PREVIEW)return;document.querySelector('#testClockPanel').classList.remove('hidden');document.querySelector('#testClockStatus').textContent=`当前测试日期：${localDate()}（已前进 ${testDayOffset} 天）`}

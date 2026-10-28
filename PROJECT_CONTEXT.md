@@ -2,6 +2,8 @@
 
 ## Spelling Bee mixed intake
 
+Latest override: default standard:Bonus ratio is 1:1. A switch in Progress/Settings (visible only for Spelling Bee) selects 1:1 on / 7:3 off, immediately saves and syncs settings.beeRatio ('equal' / 'standard'). Legacy states migrate to equal without touching memory. Counts use today's completed new learning plus remaining new slots, not historical imbalance; odd totals round in alternating calendar days. Preserve completed items, order standard randomly and Bonus shortest-first. Older clients lacking the field must not clear a saved ratio. This supersedes the earlier fixed 7:3/cumulative-history rule.
+
 Updated ordering: standard new words use a deterministic daily shuffle seeded by local date, bank ID, and word ID. Bonus new words remain shortest-first. Reopening or syncing the same day must not reshuffle the standard set; another date can produce a different order. This supersedes the earlier rule that both groups are shortest-first.
 
 The custom bank named Spelling Bee uses the supplied photo's Parts 1–4 as standard words; other words in that bank are Bonus. Cross-section duplicates count as standard. Only new-word generation changes: target cumulative 70% standard and 30% Bonus using actual learned words in this bank, never reviews or other banks. Ten fresh words yield 7+3; five alternate 3+2 and 4+1. Groups are interleaved, and each group is shortest-first. Batches of at least two contain both groups when available; one-word batches balance over time. Exhaustion falls back to remaining unseen words. Completed words and memory are never changed; uncompleted current new items are rebalanced. This rule currently matches the bank name Spelling Bee, case-insensitively.

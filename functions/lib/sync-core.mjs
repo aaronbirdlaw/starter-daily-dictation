@@ -1,4 +1,4 @@
-export const DEFAULT_SETTINGS = { newCount: 5, reviewCount: 5, learningTrack: 'all', activeBook: 'starter' };
+export const DEFAULT_SETTINGS = { newCount: 5, reviewCount: 5, learningTrack: 'all', activeBook: 'starter', beeRatio: 'equal' };
 const STARTER_WORD_COUNT = 495;
 
 export function scopedWordId(bookId, id) {
@@ -59,6 +59,7 @@ export function normalizeState(value, date) {
     newCount: Number.isFinite(newCount) ? Math.min(20, Math.max(1, newCount)) : 5,
     reviewCount: Number.isFinite(reviewCount) ? Math.min(50, Math.max(0, reviewCount)) : 5,
     learningTrack: learningTrack === 'themes' ? 'themes' : 'all',
+    beeRatio: state.settings?.beeRatio === 'standard' ? 'standard' : 'equal',
     activeBook: state.books[state.settings?.activeBook] && !state.books[state.settings.activeBook].deletedAt ? state.settings.activeBook : 'starter'
   };
   state.startedAt = state.startedAt || date;
@@ -118,6 +119,10 @@ export function mergeState(serverValue, clientValue, date) {
   merged.startedAt = [server.startedAt, client.startedAt].sort()[0];
   const clientSettingsAreNewer = client.sync.settingsUpdatedAt >= server.sync.settingsUpdatedAt;
   merged.settings = structuredClone(clientSettingsAreNewer ? client.settings : server.settings);
+  // Older phones do not know this setting; their sync must not reset the chosen ratio.
+  if (clientValue?.settings?.beeRatio === undefined && serverValue?.settings?.beeRatio !== undefined) {
+    merged.settings.beeRatio = server.settings.beeRatio;
+  }
   if (merged.books[merged.settings.activeBook]?.deletedAt) merged.settings.activeBook = 'starter';
   merged.sync.settingsUpdatedAt = clientSettingsAreNewer ? client.sync.settingsUpdatedAt : server.sync.settingsUpdatedAt;
   const serverClock = server.sync.previewClock;

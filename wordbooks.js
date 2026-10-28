@@ -7,6 +7,16 @@
   let viewedBookId=store.settings.activeBook||'starter',detailMode=false;
   const bookName=id=>id==='starter'?'Starter 词库':store.books[id]?.name||'新词库';
   const activeBooks=()=>Object.entries(store.books||{}).filter(([,book])=>!book.deletedAt);
+  const ratioPanel=document.createElement('div');ratioPanel.className='bee-ratio-panel';
+  ratioPanel.innerHTML='<label class="bee-ratio-toggle"><input id="beeRatioSwitch" type="checkbox" role="switch"><span>标准词与 Bonus 各一半（1:1）</span></label><p id="beeRatioHint" aria-live="polite"></p>';
+  document.querySelector('.setting-grid').after(ratioPanel);
+  const ratioSwitch=ratioPanel.querySelector('input');
+  ratioSwitch.onchange=()=>{
+    markLocalChange();store.settings.beeRatio=ratioSwitch.checked?'equal':'standard';
+    store.sync.settingsUpdatedAt=nextSettingsUpdatedAt(store.sync.settingsUpdatedAt);
+    ensure(store,true);save();renderToday();queueSync();
+    document.querySelector('#settingMsg').textContent=`✓ 新词比例已切换为 ${beeRatioLabel(store)}；已完成的词和全部复习记忆保留。`;
+  };
   function report(message,error=false,target='#bookImportStatus'){
     const el=document.querySelector(target);el.textContent=message;el.classList.toggle('error',error);
   }
@@ -34,6 +44,9 @@
   }
   function renderBookControls(){
     const selected=store.settings.activeBook||'starter';select.replaceChildren();
+    ratioPanel.classList.toggle('hidden',!isBeeBook(store));
+    ratioSwitch.checked=store.settings.beeRatio!=='standard';
+    document.querySelector('#beeRatioHint').textContent=`当前标准词:Bonus＝${beeRatioLabel(store)}。开启为1:1，关闭为7:3，切换后自动保存并同步。标准词随机，Bonus从短到长；单数新词按天交替取整。`;
     if(viewedBookId!=='starter'&&(!store.books[viewedBookId]||store.books[viewedBookId].deletedAt)){
       viewedBookId=selected;detailMode=false;
     }
