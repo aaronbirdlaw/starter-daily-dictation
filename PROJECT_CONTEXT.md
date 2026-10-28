@@ -1,5 +1,9 @@
 # Project Context
 
+## Spelling Bee mixed intake
+
+The custom bank named Spelling Bee uses the supplied photo's Parts 1–4 as standard words; other words in that bank are Bonus. Cross-section duplicates count as standard. Only new-word generation changes: target cumulative 70% standard and 30% Bonus using actual learned words in this bank, never reviews or other banks. Ten fresh words yield 7+3; five alternate 3+2 and 4+1. Groups are interleaved, and each group is shortest-first. Batches of at least two contain both groups when available; one-word batches balance over time. Exhaustion falls back to remaining unseen words. Completed words and memory are never changed; uncompleted current new items are rebalanced. This rule currently matches the bank name Spelling Bee, case-insensitively.
+
 ## 项目目标
 
 为 Cambridge English Pre A1 Starters 学习者提供一个简单、适合手机使用的每日英语听写工具。学习者每天完成一组新词和一组按记忆曲线到期的复习词。
