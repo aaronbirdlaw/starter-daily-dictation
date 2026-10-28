@@ -1,4 +1,4 @@
-export const DEFAULT_SETTINGS = { newCount: 5, reviewCount: 5, learningTrack: 'all', activeBook: 'starter', beeRatio: 'equal' };
+export const DEFAULT_SETTINGS = { newCount: 5, reviewCount: 5, learningTrack: 'all', activeBook: 'starter', beeRatio: 'equal', beeBonusPercent: 50 };
 const STARTER_WORD_COUNT = 495;
 
 export function scopedWordId(bookId, id) {
@@ -60,6 +60,9 @@ export function normalizeState(value, date) {
     reviewCount: Number.isFinite(reviewCount) ? Math.min(50, Math.max(0, reviewCount)) : 5,
     learningTrack: learningTrack === 'themes' ? 'themes' : 'all',
     beeRatio: state.settings?.beeRatio === 'standard' ? 'standard' : 'equal',
+    beeBonusPercent: Number.isFinite(Number(state.settings?.beeBonusPercent)) && state.settings?.beeBonusPercent !== null && state.settings?.beeBonusPercent !== ''
+      ? Math.min(100, Math.max(10, Math.round(Number(state.settings.beeBonusPercent) / 10) * 10))
+      : state.settings?.beeRatio === 'standard' ? 30 : 50,
     activeBook: state.books[state.settings?.activeBook] && !state.books[state.settings.activeBook].deletedAt ? state.settings.activeBook : 'starter'
   };
   state.startedAt = state.startedAt || date;
@@ -122,6 +125,9 @@ export function mergeState(serverValue, clientValue, date) {
   // Older phones do not know this setting; their sync must not reset the chosen ratio.
   if (clientValue?.settings?.beeRatio === undefined && serverValue?.settings?.beeRatio !== undefined) {
     merged.settings.beeRatio = server.settings.beeRatio;
+  }
+  if (clientValue?.settings?.beeBonusPercent === undefined && serverValue?.settings?.beeBonusPercent !== undefined) {
+    merged.settings.beeBonusPercent = server.settings.beeBonusPercent;
   }
   if (merged.books[merged.settings.activeBook]?.deletedAt) merged.settings.activeBook = 'starter';
   merged.sync.settingsUpdatedAt = clientSettingsAreNewer ? client.sync.settingsUpdatedAt : server.sync.settingsUpdatedAt;

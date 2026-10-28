@@ -34,7 +34,6 @@ try{
   for(let n=1;n<=20;n++){
     const selected=d.window.eval(`pickBeeWords(store,bookIds(store).filter(id=>!store.memory[id]),${n})`);
     assert.equal(selected.length,n);assert.equal(new Set(selected).size,n);
-    if(n>=2){assert(bonusCount(selected)>0);assert(bonusCount(selected)<n)}
   }
   const onlyStandard=d.window.eval('pickBeeWords(store,bookIds(store).filter(id=>!isBeeBonus(store,id)),5)');assert.equal(onlyStandard.length,5);assert.equal(bonusCount(onlyStandard),0);
   const onlyBonus=d.window.eval('pickBeeWords(store,bookIds(store).filter(id=>isBeeBonus(store,id)),5)');assert.equal(onlyBonus.length,5);assert.equal(bonusCount(onlyBonus),5);

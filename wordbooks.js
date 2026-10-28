@@ -8,11 +8,13 @@
   const bookName=id=>id==='starter'?'Starter 词库':store.books[id]?.name||'新词库';
   const activeBooks=()=>Object.entries(store.books||{}).filter(([,book])=>!book.deletedAt);
   const ratioPanel=document.createElement('div');ratioPanel.className='bee-ratio-panel';
-  ratioPanel.innerHTML='<label class="bee-ratio-toggle"><input id="beeRatioSwitch" type="checkbox" role="switch"><span>标准词与 Bonus 各一半（1:1）</span></label><p id="beeRatioHint" aria-live="polite"></p>';
+  ratioPanel.innerHTML='<label class="bee-ratio-label" for="beeBonusPercent">Bonus词占比</label><output id="beeRatioValue" for="beeBonusPercent" aria-live="polite"></output><input id="beeBonusPercent" class="bee-ratio-slider" type="range" min="10" max="100" step="10" list="beeRatioTicks"><datalist id="beeRatioTicks">'+Array.from({length:10},(_,i)=>`<option value="${(i+1)*10}" label="${(i+1)*10}%"></option>`).join('')+'</datalist><div class="bee-ratio-scale" aria-hidden="true"><span>10%</span><span>50%</span><span>100%</span></div><p id="beeRatioHint" aria-live="polite"></p>';
   document.querySelector('.setting-grid').after(ratioPanel);
   const ratioSwitch=ratioPanel.querySelector('input');
+  function previewRatio(){const n=Number(ratioSwitch.value);document.querySelector('#beeRatioValue').textContent=`Bonus ${n}% · 标准词 ${100-n}%`;ratioSwitch.setAttribute('aria-valuetext',`Bonus ${n}%，标准词 ${100-n}%`)}
+  ratioSwitch.oninput=previewRatio;
   ratioSwitch.onchange=()=>{
-    markLocalChange();store.settings.beeRatio=ratioSwitch.checked?'equal':'standard';
+    markLocalChange();store.settings.beeBonusPercent=beePercent(ratioSwitch.value);store.settings.beeRatio=store.settings.beeBonusPercent===30?'standard':'equal';
     store.sync.settingsUpdatedAt=nextSettingsUpdatedAt(store.sync.settingsUpdatedAt);
     ensure(store,true);save();renderToday();queueSync();
     document.querySelector('#settingMsg').textContent=`✓ 新词比例已切换为 ${beeRatioLabel(store)}；已完成的词和全部复习记忆保留。`;
@@ -45,8 +47,9 @@
   function renderBookControls(){
     const selected=store.settings.activeBook||'starter';select.replaceChildren();
     ratioPanel.classList.toggle('hidden',!isBeeBook(store));
-    ratioSwitch.checked=store.settings.beeRatio!=='standard';
-    document.querySelector('#beeRatioHint').textContent=`当前标准词:Bonus＝${beeRatioLabel(store)}。开启为1:1，关闭为7:3，切换后自动保存并同步。标准词随机，Bonus从短到长；单数新词按天交替取整。`;
+    if(document.activeElement!==ratioSwitch)ratioSwitch.value=beePercent(store.settings.beeBonusPercent,store.settings.beeRatio);
+    previewRatio();
+    document.querySelector('#beeRatioHint').textContent=`Bonus每次调10%，松开后自动保存并同步。默认50%，即1:1；100%表示只选Bonus新词。标准词随机，Bonus从短到长。数量较少时按天取整；某组用完时用另一组补足，复习不受比例限制。`;
     if(viewedBookId!=='starter'&&(!store.books[viewedBookId]||store.books[viewedBookId].deletedAt)){
       viewedBookId=selected;detailMode=false;
     }

@@ -11,22 +11,28 @@ const bonusCount=ids=>ids.filter(id=>id>=1000000+standard.length).length;
  const {normalizeState,mergeState}=await import('../functions/lib/sync-core.mjs');
  const d=open(initial);
  try{
-  const w=d.window,toggle=w.document.querySelector('#beeRatioSwitch');
-  assert.equal(read(d).settings.beeRatio,'equal');assert(toggle.checked);assert.equal(toggle.getAttribute('role'),'switch');
+  const w=d.window,slider=w.document.querySelector('#beeBonusPercent');
+  const setPercent=n=>{slider.value=String(n);slider.dispatchEvent(new w.Event('input'));slider.dispatchEvent(new w.Event('change'))};
+  assert.equal(slider.type,'range');assert.equal(slider.min,'10');assert.equal(slider.max,'100');assert.equal(slider.step,'10');assert.equal(slider.value,'50');
   assert.equal(bonusCount(plan(d).newIds),5,'default ten new words must be five plus five');
-  toggle.checked=false;toggle.dispatchEvent(new w.Event('change'));
-  assert.equal(read(d).settings.beeRatio,'standard');assert.equal(bonusCount(plan(d).newIds),3);
+  for(let n=10;n<=100;n+=10){setPercent(n);assert.equal(read(d).settings.beeBonusPercent,n);assert.equal(bonusCount(plan(d).newIds),n/10,`ten new words must honor ${n}% Bonus`);assert.equal(new Set(plan(d).newIds).size,10)}
+  assert.match(w.document.querySelector('#beeRatioValue').textContent,/Bonus 100%/);
+  setPercent(30);assert.equal(bonusCount(plan(d).newIds),3);
   assert.deepEqual(read(d).memory,initial.memory);
-  toggle.checked=true;toggle.dispatchEvent(new w.Event('change'));assert.equal(bonusCount(plan(d).newIds),5);
+  slider.value='80';slider.dispatchEvent(new w.Event('input'));assert.equal(read(d).settings.beeBonusPercent,30,'drag only previews until release');assert.match(w.document.querySelector('#beeRatioValue').textContent,/80%/);
+  setPercent(50);assert.equal(bonusCount(plan(d).newIds),5);
   const id=plan(d).newIds[0];w.document.querySelector(`[data-know="${id}"]`).click();const remembered=read(d).memory;
-  toggle.checked=false;toggle.dispatchEvent(new w.Event('change'));
+  setPercent(80);
   assert(plan(d).doneIds.includes(id));assert.deepEqual(read(d).memory,remembered,'switching ratio preserves completed-word review dates and memory');
-  const state=read(d),reload=open(state);try{assert.equal(read(reload).settings.beeRatio,'standard');assert(!reload.window.document.querySelector('#beeRatioSwitch').checked)}finally{reload.window.close()}
-  const normalized=normalizeState(state,'2026-10-28');assert.equal(normalized.settings.beeRatio,'standard');
-  const stale=structuredClone(state);stale.settings.beeRatio='equal';stale.sync.settingsUpdatedAt='2020-01-01';assert.equal(mergeState(stale,state,'2026-10-28').settings.beeRatio,'standard');
-  const oldPhone=structuredClone(state);delete oldPhone.settings.beeRatio;oldPhone.sync.settingsUpdatedAt='2099-01-01';assert.equal(mergeState(state,oldPhone,'2026-10-28').settings.beeRatio,'standard','old client cannot erase ratio choice');
+  const state=read(d),reload=open(state);try{assert.equal(read(reload).settings.beeBonusPercent,80);assert.equal(reload.window.document.querySelector('#beeBonusPercent').value,'80')}finally{reload.window.close()}
+  const normalized=normalizeState(state,'2026-10-28');assert.equal(normalized.settings.beeBonusPercent,80);
+  const stale=structuredClone(state);stale.settings.beeBonusPercent=20;stale.sync.settingsUpdatedAt='2020-01-01';assert.equal(mergeState(stale,state,'2026-10-28').settings.beeBonusPercent,80);
+  const oldPhone=structuredClone(state);delete oldPhone.settings.beeBonusPercent;oldPhone.sync.settingsUpdatedAt='2099-01-01';assert.equal(mergeState(state,oldPhone,'2026-10-28').settings.beeBonusPercent,80,'old client cannot erase slider choice');
+  for(const legacy of ['standard','equal']){const old=structuredClone(initial);old.settings.beeRatio=legacy;const migrated=open(old);try{assert.equal(read(migrated).settings.beeBonusPercent,legacy==='standard'?30:50)}finally{migrated.window.close()}}
+  assert.equal(normalizeState({settings:{beeBonusPercent:200}},'2026-10-28').settings.beeBonusPercent,100);
+  assert.equal(normalizeState({settings:{beeBonusPercent:-10}},'2026-10-28').settings.beeBonusPercent,10);
   const selector=w.document.querySelector('#bookSelect');selector.value='starter';selector.dispatchEvent(new w.Event('change'));
   assert(w.document.querySelector('.bee-ratio-panel').classList.contains('hidden'),'ratio switch belongs to Spelling Bee only');
-  console.log('PASS: default 1:1, manual 7:3 switch, immediate replanning, saved state, sync, memory and bank isolation');
+  console.log('PASS: 10–100% slider, preview/commit, 100% Bonus, saved state, legacy migration, sync, memory and bank isolation');
  }finally{d.window.close()}
 })().catch(e=>{console.error(e);process.exitCode=1});
