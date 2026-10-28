@@ -16,6 +16,32 @@
   .book-manage-actions{display:flex;flex-wrap:wrap;gap:8px}.book-manage-actions .view-book{background:var(--forest);color:#fff;border-color:var(--forest)}.book-detail-bar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:15px;margin-bottom:16px;border:1px solid var(--line);background:#fff}.book-detail-bar p{margin:0;font-size:13px;color:#62736a}.book-detail-bar button{min-height:44px;padding:10px 14px;border:0;background:var(--forest);color:#fff;font-weight:700}@media(max-width:410px){.book-detail-bar{align-items:stretch;flex-direction:column}.book-manage-actions{width:100%}}
   .page-title h1{overflow-wrap:anywhere}
   @media(min-width:731px){.hero{grid-template-columns:minmax(0,1fr) 190px;gap:24px}.hero h1{font-size:clamp(40px,5vw,62px);white-space:nowrap}}
+  /* iPhone layout: allow grid children and titles to shrink to the viewport. */
+  html,body{width:100%;min-width:0}
+  .shell{width:100%;min-width:0;padding-bottom:calc(104px + env(safe-area-inset-bottom,0px))}
+  .content,.hero>*,.tools>*,.book-tools>*,.setting-grid>*,.bank-word>*,.book-detail-bar>*{min-width:0}
+  .hero h1{max-width:100%;white-space:normal;overflow-wrap:anywhere;line-height:1.12}
+  .hero-copy,.notice,.sync-meta,.history-row strong,.book-manage-row{overflow-wrap:anywhere}
+  .bank{grid-template-columns:repeat(4,minmax(0,1fr))}
+  .bank-word{grid-template-columns:24px minmax(0,1fr) 18px;overflow-wrap:anywhere}
+  .nav{bottom:calc(12px + env(safe-area-inset-bottom,0px));width:min(calc(100% - 24px),470px);grid-template-columns:repeat(3,minmax(0,1fr))}
+  .nav button{min-width:0}
+  @media(max-width:730px){
+    .content{width:calc(100% - 24px)}
+    .hero{grid-template-columns:minmax(0,1fr);padding:32px 0 24px;gap:24px}
+    .hero h1{font-size:clamp(32px,9vw,44px);white-space:normal;line-height:1.16;letter-spacing:-.035em}
+    .hero-copy{max-width:100%;font-size:16px;line-height:1.75}
+    .card,.history,.settings,.book-import{width:100%;max-width:100%;min-width:0}
+    .word-row{grid-template-columns:38px 47px minmax(0,1fr)}
+    .section-head{gap:12px}.section-head>div{min-width:0}.play-all{flex-shrink:0}
+    .bank{grid-template-columns:repeat(2,minmax(0,1fr))}
+    .book-tools label{width:100%}.book-tools select{width:100%;min-width:0}
+    .settings{padding:20px 16px}.sync-manage,.ocr-review{padding:14px}
+    input,select,textarea{font-size:16px;min-width:0;max-width:100%}
+    .book-detail-bar{flex-wrap:wrap}.image-choice{min-width:0;width:100%}
+    .book-manage-row{align-items:flex-start;flex-direction:column}
+  }
+  @media(max-width:410px){.bank{grid-template-columns:minmax(0,1fr)}}
 </style>
 </head>
 <body>
