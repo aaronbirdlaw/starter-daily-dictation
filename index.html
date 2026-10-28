@@ -89,8 +89,15 @@ function pick(s,pool,count){return [...pool].sort((a,b)=>spellingLength(wordFor(
 const BEE_STANDARD=new Set(`at pat map mad dam rag lab sat man sap add jam wag jab mat fan rap bad ram nag rat can cap dad sam gag bat pan gap had yam lag cat ran lap fad pam cab tan tap pad tag tab fat van zap sag dab hat nap sad ham bag gab big lid sit yip win dill fig rid wit him mix gill pig sid mitt dim six hill wig it sip Jim fix Jill dig fit dip Kim nix will rig bit hip rim ill kill hid hit lip Tim fill pill bid kit rip in sill kid lit tip pin mill did pit zip bin bill hot not bop ox rob fog cot pot hop box mob log dot rot mop fox sob jog got tot pop job cob hog lot top lop bob dog bug bun gut pup hen yet mug gun rut bed ten net dug sun put led set pet tug pun cub fed met vet jug nut sub wed get leg hug but hub red bet beg rug jut rub pen wet egg fun hut tub men jet run cut up den let`.toLowerCase().split(/\s+/));
 const isBeeBook=s=>s.settings.activeBook!=='starter'&&s.books?.[s.settings.activeBook]?.name.trim().toLowerCase()==='spelling bee';
 const isBeeBonus=(s,id)=>!BEE_STANDARD.has(wordFor(s,id).trim().toLowerCase());
+function beeRandomRank(s,id){
+  // A seeded daily shuffle gives both phones the same random order and survives reloads.
+  let hash=2166136261;
+  for(const char of `${localDate()}:${s.settings.activeBook}:${id}`)hash=Math.imul(hash^char.charCodeAt(0),16777619)>>>0;
+  hash^=hash>>>16;hash=Math.imul(hash,0x7feb352d);hash^=hash>>>15;
+  return hash>>>0;
+}
 function pickBeeWords(s,pool,count){
-  const standard=pick(s,pool.filter(id=>!isBeeBonus(s,id)),pool.length);
+  const standard=pool.filter(id=>!isBeeBonus(s,id)).sort((a,b)=>beeRandomRank(s,a)-beeRandomRank(s,b)||a-b);
   const bonus=pick(s,pool.filter(id=>isBeeBonus(s,id)),pool.length);
   const learnedIds=bookIds(s).filter(id=>s.memory[id]);
   const learnedBonus=learnedIds.filter(id=>isBeeBonus(s,id)).length;

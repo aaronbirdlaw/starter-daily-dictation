@@ -2,6 +2,8 @@
 
 ## Spelling Bee mixed intake
 
+Updated ordering: standard new words use a deterministic daily shuffle seeded by local date, bank ID, and word ID. Bonus new words remain shortest-first. Reopening or syncing the same day must not reshuffle the standard set; another date can produce a different order. This supersedes the earlier rule that both groups are shortest-first.
+
 The custom bank named Spelling Bee uses the supplied photo's Parts 1–4 as standard words; other words in that bank are Bonus. Cross-section duplicates count as standard. Only new-word generation changes: target cumulative 70% standard and 30% Bonus using actual learned words in this bank, never reviews or other banks. Ten fresh words yield 7+3; five alternate 3+2 and 4+1. Groups are interleaved, and each group is shortest-first. Batches of at least two contain both groups when available; one-word batches balance over time. Exhaustion falls back to remaining unseen words. Completed words and memory are never changed; uncompleted current new items are rebalanced. This rule currently matches the bank name Spelling Bee, case-insensitively.
 
 ## 项目目标
