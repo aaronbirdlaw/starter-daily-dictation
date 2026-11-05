@@ -62,12 +62,14 @@ try {
   assert.equal(plan(crowded).reviewIds.length, 10);
   assert.equal(plan(crowded).newIds.length, 5);
   assert(first.every(id => plan(crowded).reviewIds.includes(id)));
-  assert(first.includes(plan(crowded).reviewIds[0]), 'yesterday first reviews take priority over backlog');
+  assert(first.includes(plan(crowded).reviewIds[0]), 'first reviews take priority over repeated reviews');
   const done = plan(crowded).newIds[0];click(crowded, `[data-know="${done}"]`);
   const heavySeed = state(crowded);
   for (let id = 307; id < 315; id++) heavySeed.memory[id] = { stage: 0, learnedAt: '2020-01-01', lastReviewed: '2020-01-01', nextReview: '2020-01-02' };
   const heavy = load(heavySeed);
   assert.equal(plan(heavy).reviewIds.length, 10);
+  assert.deepEqual(plan(heavy).reviewIds.slice(0,8),[307,308,309,310,311,312,313,314],'oldest first reviews lead, even when not learned yesterday');
+  assert(plan(heavy).reviewIds.slice(8).every(id=>first.includes(id)),'repeat reviews wait while first reviews remain due');
   assert.equal(plan(heavy).newIds.length, 5, 'reviews cannot take new-word slots');
   assert(plan(heavy).newIds.includes(done));
   assert(heavy.document.querySelector('.word-row.done .crossed'));
@@ -78,6 +80,20 @@ try {
   assert.equal(plan(heavy).reviewIds.length, 10, 'missed reviews carry forward in bounded batches');
   assert.equal(plan(heavy).newIds.length, 5);
   assert.equal(state(heavy).memory[300].stage, 1, 'missed days never advance memory');
+  const coverageSeed=structuredClone(seed);
+  const learnedAt='2020-01-01';
+  coverageSeed.memory={
+    300:{stage:3,learnedAt,nextReview:'2020-01-05'},
+    301:{stage:0,learnedAt,nextReview:'2020-01-07'},
+    302:{stage:0,learnedAt,nextReview:'2020-01-06'},
+    303:{stage:0,learnedAt,nextReview:'2020-01-04',restartedAt:'2020-01-03T00:00:00Z'},
+    304:{stage:0,learnedAt,nextReview:'2020-01-03'},
+    305:{stage:0,learnedAt,nextReview:'2099-01-01'},
+  };
+  coverageSeed.days={'2020-01-02':{date:'2020-01-02',newIds:[],reviewIds:[],doneIds:[],completedReviewIds:[304]}};
+  const coverage=load(coverageSeed);
+  assert.deepEqual(plan(coverage).reviewIds,[302,301,304,303,300],'first due reviews lead; previously reviewed words stay in date order, even after a restart; future reviews stay out');
+  assert.deepEqual(state(coverage).memory,coverageSeed.memory,'prioritization must not change due dates or memory');
   const notStarted = load({ ...seed, memory: {}, days: { [date]: { date, newIds: [0], reviewIds: [], doneIds: [] } } });
   click(notStarted, '[data-test-days="1"]');assert.equal(plan(notStarted).reviewIds.length, 0, 'displaying a new word does not start its memory clock');
   const fortySeed=JSON.parse(JSON.stringify(seed));

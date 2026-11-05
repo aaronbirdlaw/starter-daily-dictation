@@ -2,7 +2,7 @@
 
 ## 新词优先与词库统计（覆盖下面旧排程规则）
 
-- 每日新词设定是目标，不是由复习挤占的上限。词库新词足够时先保证目标，再用建议总量（公式不变）的余额安排复习。昨日新词首次复习仍优先，其余按到期日期排；排不下的保留原到期日，后续继续排队。
+- 每日新词设定是目标，不是由复习挤占的上限。词库新词足够时先保证目标，再用建议总量（公式不变）的余额安排复习。所有已到期的首次复习优先（包括以前未排上的词），其余再排，每组按原到期日期从早到晚；排不下的保留原到期日，后续继续排队。
 - 不移除任何已完成项目；若已完成复习挤占新词名额，补足新词可使当天超过建议总量。主动加练仍可在当日完成后开启。
 - 完整词库显示当前查看词库的全部、已学习、待学习数量，不随搜索过滤改变。复习次数从每日完成的复习记录推导，同一词同一天计一次；首次学会不计，标记不熟练的复习计入。早期历史不完整时，现有复习阶段作为次数下限。
 
@@ -98,4 +98,4 @@ The custom bank named Spelling Bee uses the supplied photo's Parts 1–4 as stan
 
 ## Daily review batches (supersedes prior unlimited daily-list rule)
 
-Today is limited to the suggested total. Yesterday’s new words receive first-review priority; other reviews are oldest-due first. Preserve completed items even after lowering the target. Excess reviews remain in memory at their original dates and appear as a separate backlog count. Completing today succeeds even with backlog. Continue review explicitly adds up to five words; the per-day extraReview allowance defaults to zero and synchronizes by maximum, never sum. No automatic refill on completion or sync. Memory and existing dates are never reset.
+Today is limited to the suggested total. All due first reviews come before repeat reviews, oldest due first within each group. Preserve completed items even after lowering the target. Excess reviews remain in memory at their original dates and appear as a separate backlog count. Completing today succeeds even with backlog. Continue review explicitly adds up to five words; the per-day extraReview allowance defaults to zero and synchronizes by maximum, never sum. No automatic refill on completion or sync. Memory and existing dates are never reset.
