@@ -1,5 +1,11 @@
 # Project Context
 
+## 新词优先与词库统计（覆盖下面旧排程规则）
+
+- 每日新词设定是目标，不是由复习挤占的上限。词库新词足够时先保证目标，再用建议总量（公式不变）的余额安排复习。昨日新词首次复习仍优先，其余按到期日期排；排不下的保留原到期日，后续继续排队。
+- 不移除任何已完成项目；若已完成复习挤占新词名额，补足新词可使当天超过建议总量。主动加练仍可在当日完成后开启。
+- 完整词库显示当前查看词库的全部、已学习、待学习数量，不随搜索过滤改变。复习次数从每日完成的复习记录推导，同一词同一天计一次；首次学会不计，标记不熟练的复习计入。早期历史不完整时，现有复习阶段作为次数下限。
+
 ## Spelling Bee mixed intake
 
 Latest UI override: use a native Bonus-percentage range slider (10–100, step 10, default 50), not a binary switch. Store settings.beeBonusPercent and synchronize it; legacy beeRatio standard/equal migrate to 30/50. Preview on input and commit on change. Honor 100% Bonus when available, removing the earlier forced-both-groups constraint. Keep completed new words and all memory. Display both percentages, round for small batches, and fall back to the available group when one is exhausted. Preserve numeric choices when older clients without this field synchronize.

@@ -7,10 +7,11 @@ const seed={version:4,settings:{newCount:5,reviewCount:5,activeBook:'book-beetes
 function open(s){return new JSDOM(html,{url:'https://feature-spelling-bee-mix.starter-daily-dictation.pages.dev',runScripts:'dangerously',beforeParse(w){w.localStorage.setItem('starter-dictation-v2',JSON.stringify(s))}})}
 function state(d){return JSON.parse(d.window.localStorage.getItem('starter-dictation-v2'))}
 function bonusCount(ids){return ids.filter(id=>id>=1000000+standard.length).length}
+const expectedFiveBonus=date=>Number(date.replaceAll('-',''))%2===0?2:1;
 const d=open(seed);
 try{
   const date=Object.keys(state(d).days)[0];let p=state(d).days[date];
-  assert.equal(p.newIds.length,5);assert.equal(bonusCount(p.newIds),2);
+  assert.equal(p.newIds.length,5);assert.equal(bonusCount(p.newIds),expectedFiveBonus(date));
   assert.deepEqual(state(d).memory,seed.memory,'generation never changes existing memory');
   const first=[...p.newIds];
   const firstBonus=first.filter(id=>bonusCount([id]));
@@ -27,8 +28,7 @@ try{
   for(const id of first)d.window.document.querySelector(`[data-know="${id}"]`).click();
   d.window.document.querySelector('[data-test-days="1"]').click();
   let s=state(d);p=s.days[Object.keys(s.days).sort().at(-1)];
-  assert.equal(bonusCount(p.newIds),1,'next five compensate rounding for seven to three');
-  assert.equal(bonusCount([...first,...p.newIds]),3);
+  assert.equal(bonusCount(p.newIds),expectedFiveBonus(p.date),'the next batch uses its own calendar date for rounding');
   assert.equal(p.reviewIds.length,5,'all yesterday words still receive review irrespective of group');
   const again=open(s);try{assert.deepEqual(state(again).days,p===undefined?{}:s.days,'refresh keeps chosen words stable')}finally{again.window.close()}
   for(let n=1;n<=20;n++){

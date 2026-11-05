@@ -10,8 +10,8 @@ Read `README.md` and `PROJECT_CONTEXT.md` before changing code.
 - Use the learner's local calendar date, not UTC, for daily plans.
 - A completed word must remain visibly crossed out.
 - Completed items must not be discarded when daily quantity settings change.
-- Daily reviews prioritize yesterday’s first reviews, then oldest nextReview. Cap today by suggested workload; preserve the remaining backlog in memory.
-- Reset clears learning data and restores a 5-new-word ceiling with a derived 15-word suggested total. Preserve legacy reviewCount=5 for backward compatibility; it no longer caps reviews.
+- Reserve the configured new-word target before assigning reviews. Daily reviews prioritize yesterday’s first reviews, then oldest nextReview. Cap new assignments by suggested workload; preserve the remaining backlog in memory.
+- Reset clears learning data and restores a 5-new-word target with a derived 15-word suggested total. Preserve legacy reviewCount=5 for backward compatibility; it no longer caps reviews.
 
 ## Engineering rules
 

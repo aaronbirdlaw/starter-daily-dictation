@@ -76,8 +76,12 @@
       ?'主题内的新词会优先进入听写；已开始学习的词仍按原有记忆曲线复习。'
       :'主题优先只适用于 Starter；当前新词和复习来自选中的词库。'}
   }
-  const baseToday=renderToday;renderToday=function(){baseToday();renderBookControls()};
-  const baseBank=renderBank;renderBank=function(){renderBookControls();baseBank(viewedBookId)};
+  const baseToday=renderToday,baseBank=renderBank;
+  renderToday=function(){
+    baseToday();renderBookControls();
+    if(!document.querySelector('#wordsView').classList.contains('hidden')&&!document.querySelector('#bankBrowse').classList.contains('hidden'))baseBank(viewedBookId);
+  };
+  renderBank=function(){renderBookControls();baseBank(viewedBookId)};
   renderBookControls();
   function updateActiveBook(id){
     if(id!=='starter'&&(!store.books[id]||store.books[id].deletedAt))return;
