@@ -49,7 +49,7 @@
     ratioPanel.classList.toggle('hidden',!isBeeBook(store));
     if(document.activeElement!==ratioSwitch)ratioSwitch.value=beePercent(store.settings.beeBonusPercent,store.settings.beeRatio);
     previewRatio();
-    document.querySelector('#beeRatioHint').textContent=`Bonus每次调10%，松开后自动保存并同步。默认50%，即1:1；100%表示只选Bonus新词。标准词随机，Bonus从短到长。数量较少时按天取整；某组用完时用另一组补足，复习不受比例限制。`;
+    document.querySelector('#beeRatioHint').textContent=`Bonus每次调10%，松开后自动保存并同步。默认50%；100%优先选Bonus新词。Bonus新词中，6个字母及以下和7个字母及以上各约一半，组内从短到长，两组交错；某组用完时用另一组补足。复习不受比例限制。`;
     if(viewedBookId!=='starter'&&(!store.books[viewedBookId]||store.books[viewedBookId].deletedAt)){
       viewedBookId=selected;detailMode=false;
     }

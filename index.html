@@ -139,21 +139,42 @@ function beeRandomRank(s,id){
   hash^=hash>>>16;hash=Math.imul(hash,0x7feb352d);hash^=hash>>>15;
   return hash>>>0;
 }
+const isLongBeeBonus=(s,id)=>spellingLength(wordFor(s,id))>=7;
+function pickBeeBonus(s,pool,count,learnedBonusIds,date){
+  const shortPool=[],longPool=[];
+  for(const id of pool)(isLongBeeBonus(s,id)?longPool:shortPool).push(id);
+  const learnedLong=learnedBonusIds.filter(id=>isLongBeeBonus(s,id)).length;
+  const learnedShort=learnedBonusIds.length-learnedLong;
+  // Use the local calendar date as a day number, including at month boundaries.
+  const longFirst=Date.parse(date)/86400000%2===0;
+  const targetLong=Math.floor((learnedBonusIds.length+count+(longFirst?1:0))/2);
+  const longCount=Math.max(count-shortPool.length,Math.min(count,longPool.length,targetLong-learnedLong),0);
+  const longs=pick(s,longPool,longCount),shorts=pick(s,shortPool,count-longCount);
+  const result=[];
+  let shortSoFar=learnedShort,longSoFar=learnedLong;
+  while(shorts.length||longs.length){
+    if(longs.length&&(!shorts.length||longSoFar<shortSoFar||(longSoFar===shortSoFar&&longFirst))){
+      result.push(longs.shift());longSoFar++;
+    }else{
+      result.push(shorts.shift());shortSoFar++;
+    }
+  }
+  return result;
+}
 function pickBeeWords(s,pool,count){
   const standard=pool.filter(id=>!isBeeBonus(s,id)).sort((a,b)=>beeRandomRank(s,a)-beeRandomRank(s,b)||a-b);
-  const bonus=pick(s,pool.filter(id=>isBeeBonus(s,id)),pool.length);
+  const bonus=pool.filter(id=>isBeeBonus(s,id)),date=localDate();
   // Count only today's actual new learning: changing ratios must not trigger catch-up
   // for the old ratio's entire learning history.
-  const learnedIds=bookIds(s).filter(id=>s.memory[id]?.learnedAt===localDate());
-  const learnedBonus=learnedIds.filter(id=>isBeeBonus(s,id)).length;
+  const learnedIds=bookIds(s).filter(id=>s.memory[id]?.learnedAt===date);
+  const learnedBonusIds=learnedIds.filter(id=>isBeeBonus(s,id)),learnedBonus=learnedBonusIds.length;
   const available=Math.min(count,pool.length);
-  const share=beeBonusShare(s),rounding=Number(localDate().replaceAll('-',''))%2===0?.5:0;
+  const share=beeBonusShare(s),rounding=Number(date.replaceAll('-',''))%2===0?.5:0;
   let bonusCount=Math.floor((learnedIds.length+available)*share+rounding)-learnedBonus;
   bonusCount=Math.max(0,Math.min(available,bonusCount));
   // Honor the requested percentage, including 100% Bonus. Small batches round.
-  const chosenBonus=bonus.slice(0,Math.min(bonusCount,bonus.length));
-  const chosenStandard=standard.slice(0,available-chosenBonus.length);
-  chosenBonus.push(...bonus.slice(chosenBonus.length,chosenBonus.length+Math.max(0,available-chosenBonus.length-chosenStandard.length)));
+  const chosenStandard=standard.slice(0,available-Math.min(bonusCount,bonus.length));
+  const chosenBonus=pickBeeBonus(s,bonus,available-chosenStandard.length,learnedBonusIds,date);
   const result=[];
   while(chosenStandard.length||chosenBonus.length){
     const needBonus=Math.floor((learnedIds.length+result.length+1)*share+rounding)>learnedBonus+result.filter(id=>isBeeBonus(s,id)).length;

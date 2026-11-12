@@ -8,6 +8,8 @@
 
 ## Spelling Bee mixed intake
 
+Bonus difficulty mix overrides the previous global shortest-first policy: within the existing Bonus quota, split unseen words at 7 spelling letters and aim for half short (≤6), half long (≥7). Pick shortest first within each group and interleave the picks. Odd extra slots alternate by local calendar day; count today's completed Bonus words when re-planning. If one length group runs out, fill from the other. Standard/Bonus slider and review rules are unchanged.
+
 Latest UI override: use a native Bonus-percentage range slider (10–100, step 10, default 50), not a binary switch. Store settings.beeBonusPercent and synchronize it; legacy beeRatio standard/equal migrate to 30/50. Preview on input and commit on change. Honor 100% Bonus when available, removing the earlier forced-both-groups constraint. Keep completed new words and all memory. Display both percentages, round for small batches, and fall back to the available group when one is exhausted. Preserve numeric choices when older clients without this field synchronize.
 
 Latest override: default standard:Bonus ratio is 1:1. A switch in Progress/Settings (visible only for Spelling Bee) selects 1:1 on / 7:3 off, immediately saves and syncs settings.beeRatio ('equal' / 'standard'). Legacy states migrate to equal without touching memory. Counts use today's completed new learning plus remaining new slots, not historical imbalance; odd totals round in alternating calendar days. Preserve completed items, order standard randomly and Bonus shortest-first. Older clients lacking the field must not clear a saved ratio. This supersedes the earlier fixed 7:3/cumulative-history rule.

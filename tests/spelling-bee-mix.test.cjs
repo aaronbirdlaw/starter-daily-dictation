@@ -1,7 +1,7 @@
 const fs=require('node:fs'),assert=require('node:assert/strict'),{JSDOM}=require('jsdom');
 const html=fs.readFileSync(require('node:path').join(__dirname,'../index.html'),'utf8');
 const standard='at pat map mad dam rag lab sat man sap add jam wag jab mat fan rap bad ram nag rat can cap dad sam gag bat pan gap had yam lag cat ran lap fad pam cab'.split(' ');
-const bonus='bell lack sock chop chess sell pack duck chat check fell kick luck chap shell yell sick puck chug shut tell lick tuck chip ship importance elephant air'.split(' ');
+const bonus='bell lack sock chop chess sell pack duck chat check fell kick luck chap shell yell sick puck chug shut tell lick tuck chip ship little airport balloon picture cookie elephant importance policewoman air'.split(' ');
 const words=[...standard,...bonus].map((text,i)=>({id:1000000+i,text}));
 const seed={version:4,settings:{newCount:5,reviewCount:5,activeBook:'book-beetest1',learningTrack:'all',beeRatio:'standard'},days:{},memory:{0:{stage:4,learnedAt:'2020-01-01',nextReview:'2020-01-02'}},books:{'book-beetest1':{id:'book-beetest1',name:'Spelling Bee',words}},sync:{generation:0},startedAt:'2020-01-01'};
 function open(s){return new JSDOM(html,{url:'https://feature-spelling-bee-mix.starter-daily-dictation.pages.dev',runScripts:'dangerously',beforeParse(w){w.localStorage.setItem('starter-dictation-v2',JSON.stringify(s))}})}
@@ -15,8 +15,40 @@ try{
   assert.deepEqual(state(d).memory,seed.memory,'generation never changes existing memory');
   const first=[...p.newIds];
   const firstBonus=first.filter(id=>bonusCount([id]));
-  assert.equal(words.find(w=>w.id===firstBonus[0]).text,'air','Bonus starts with shortest unseen words');
-  assert(firstBonus.every(id=>words.find(w=>w.id===id).text.length<=4),'no long Bonus while shorter ones remain');
+  const word=id=>words.find(w=>w.id===id).text;
+  const long=id=>word(id).length>=7;
+  const longFirst=day=>Date.parse(day)/86400000%2===0;
+  assert.equal(word(firstBonus.find(longFirst(date)?long:id=>!long(id))),longFirst(date)?'airport':'air','use the shortest unseen word in the leading length group');
+  const mixedSeed=structuredClone(seed);mixedSeed.settings.newCount=15;mixedSeed.settings.beeBonusPercent=50;
+  const mixed=open(mixedSeed);
+  try{
+    const picked=state(mixed).days[date].newIds.filter(id=>bonusCount([id]));
+    assert.equal(picked.length,Number(date.replaceAll('-',''))%2===0?8:7);
+    assert.equal(picked.filter(long).length,Math.floor((picked.length+(longFirst(date)?1:0))/2));
+    assert(picked.every((id,i)=>i===0||long(id)!==long(picked[i-1])),'short and long Bonus words are interleaved');
+    assert.equal(word(picked.find(long)),'airport');
+    assert.equal(word(picked.find(id=>!long(id))),'air');
+    assert(!picked.some(id=>word(id)==='policewoman'),'longest waits while shorter long-group words remain');
+    const bonusPool=words.slice(standard.length).map(w=>w.id);
+    const pick=(ids,n,done,day)=>Array.from(mixed.window.eval(`pickBeeBonus(store,${JSON.stringify(ids)},${n},${JSON.stringify(done)},'${day}')`));
+    for(const day of ['2026-10-31','2026-11-01']){
+      const odd=pick(bonusPool,7,[],day);
+      assert.equal(odd.filter(long).length,longFirst(day)?4:3,'odd slots alternate across month boundaries');
+    }
+    const shortOnly=bonusPool.filter(id=>!long(id));
+    assert.equal(pick(shortOnly,8,[],date).length,8,'a depleted long group is backfilled');
+    const longOnly=bonusPool.filter(long);
+    assert.equal(pick(longOnly,5,[],date).length,5,'a depleted short group is backfilled');
+    assert(pick(bonusPool,bonusPool.length,[],date).includes(words.find(w=>w.text==='little').id),'six-letter words are eligible');
+    const completed=picked.find(long);
+    mixed.window.document.querySelector(`[data-know="${completed}"]`).click();
+    const saved=state(mixed),reloaded=open(saved);
+    try{
+      assert.deepEqual(state(reloaded).memory,saved.memory);
+      assert(state(reloaded).days[date].doneIds.includes(completed));
+      assert.equal(state(reloaded).days[date].newIds.filter(id=>bonusCount([id])&&long(id)).length,picked.filter(long).length,'replanning includes completed long words in quota');
+    }finally{reloaded.window.close()}
+  }finally{mixed.window.close()}
   const stable=open(state(d));try{assert.deepEqual(state(stable).days[date].newIds,first,'daily random standard selection survives reload')}finally{stable.window.close()}
   const standardPool=standard.map((_,i)=>1000000+i);
   const rankToday=Array.from(d.window.eval(`pickBeeWords(store,${JSON.stringify(standardPool)},${standardPool.length})`));
