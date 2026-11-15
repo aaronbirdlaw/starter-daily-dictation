@@ -20,6 +20,33 @@ const click=(dom,selector)=>dom.window.document.querySelector(selector).click();
 
 (async()=>{
   const {normalizeState,mergeState,containsState,freshState}=await import('../functions/lib/sync-core.mjs');
+  {
+    const id='book-eagles-update',date='2026-11-14',wordId=1000042;
+    const seed=freshState(date);
+    seed.settings.activeBook=id;
+    seed.books[id]={id,name:'Spelling Bee',words:[{id:wordId,text:'mirror'}]};
+    seed.memory[wordId]={learnedAt:date,lastReviewed:date,nextReview:'2099-01-01',stage:2};
+    const a=open(seed),b=open(seed);
+    try{
+      for(const device of [a,b]){
+        click(device,'#showBookImport');
+        const button=device.window.document.querySelector('#appendEaglesBonus');
+        assert.match(button.textContent,/263/);
+        button.click();
+        const result=state(device),words=result.books[id].words;
+        assert.equal(words.length,264);
+        assert.equal(new Set(words.map(w=>w.text.toLowerCase())).size,264);
+        assert.deepEqual(words[0],seed.books[id].words[0]);
+        assert.deepEqual(result.memory,seed.memory);
+        assert(words.slice(1).every(w=>device.window.eval(`isBeeBonus(store,${w.id})`)));
+        assert(button.disabled);
+        button.click();
+        assert.deepEqual(state(device),result);
+      }
+      assert.deepEqual(state(a).books[id].words,state(b).books[id].words);
+      assert.equal(mergeState(state(a),state(b),date).books[id].words.length,264);
+    }finally{a.window.close();b.window.close()}
+  }
   const dom=open();
   const starter=state(dom);
   const starterFirst=starter.days[Object.keys(starter.days)[0]].newIds[0];

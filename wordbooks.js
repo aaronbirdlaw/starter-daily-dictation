@@ -1,9 +1,65 @@
 (function setupWordbooks(){
+  // Beginner 2 supplement, PDF pages 18–20; deduplicated against the original list.
+  const eaglesBonus=`
+cleaner measure seagull nonrenewable medalist mixture agent opportunity
+normal revise clinic department spirit hatches panpipes damage
+silver plateau injection administrative curious collage secret overweight
+lever usually didgeridoo balance preserve thoughtful scissors shower
+trumpet Australia parrot microfiber animation comment function gardener
+association bottle beefsteak bracelet private cocktail waiter headline
+forehead reduce inside request pancake recycling crazy thank
+toothache behind swan fifty station reply equal below
+country seaweed worker fridge cricket eagle warrior lawyer
+hotel magic interesting sleepy rectangle stationery climate fever
+sunshine chase raking pasta spaceship pass smooth beard
+funny angry movie pound unhappy worry piano choose
+hero winner raindrop squawk popular hometown August frame
+dentist special rubbish heart photo wheelchair wherever ability
+pepper handle bunny people inventor evening produce safety
+compete several yesterday electric sincerely copy mushroom starfish
+lookout museum biscuit snowflakes camp multiply dollar pleasant
+fresh thumb energy flashlight correct misunderstand income poster
+playground fierce passage immigrant stay large efficient stand
+following minute chemical friend erase lightning circus path
+hungry leaping forecast branch refrigerator invisible bean medicine
+thirty soccer flight slippers exam trousers waterfall bookshelf
+repeat ballet actress better university lobster video badminton
+massage banker beaver competition deadline bakery ocean mansion
+traffic earn jellyfish kiwifruit modern beside roller accept
+concert scientist lollipop theme website ceiling fried draw
+sneezing marker counting seat arrive cabbage please shape
+attitude trash earliest painter thunder sharp triangle bowling
+buffet page explore drawer carpet world unsuccessful foreign
+alien sports suggestion laundry physical pitch encouragement shooting
+ax junk third trombone splash due housework landing
+brick store entrance rainforest sour twig congee workman
+crown gym goggles sneakers verb kind footbridge
+  `.trim().split(/\s+/);
   const select=document.querySelector('#bookSelect');
   const manage=document.querySelector('#bookManage');
   const importPanel=document.querySelector('#bookImport');
   const manualInput=document.querySelector('#importWords');
   const ocrInput=document.querySelector('#ocrWords');
+  const supplement=document.createElement('button');
+  supplement.type='button';supplement.id='appendEaglesBonus';
+  document.querySelector('#importTargetHint').after(supplement);
+  supplement.onclick=()=>{
+    if(!isBeeBook(store)||store.books[store.settings.activeBook]?.deletedAt)return;
+    const book=store.books[store.settings.activeBook],id=store.settings.activeBook;
+    const existing=new Set(book.words.map(item=>norm(item.text)));
+    const used=new Set(allWordIds(store));
+    const missing=eaglesBonus.filter(word=>!existing.has(norm(word)));
+    if(!missing.length)return;
+    // Stable per-book IDs keep simultaneous imports on two devices identical.
+    const additions=missing.map(text=>({id:scopedWordId(id,'eagles-bonus-2027:'+norm(text)),text}));
+    if(additions.some(item=>used.has(item.id))||new Set(additions.map(item=>item.id)).size!==additions.length){
+      report('检测到词条编号冲突，未修改词库。',true);return;
+    }
+    book.words.push(...additions);
+    markLocalChange();book.updatedAt=nextSettingsUpdatedAt(book.updatedAt);
+    ensure(store,true);save();renderToday();renderBank();queueSync();
+    report(`已追加 ${additions.length} 个 Bonus 词，现有 ${book.words.length} 个词条；原有学习记录保留。`);
+  };
   let viewedBookId=store.settings.activeBook||'starter',detailMode=false;
   const bookName=id=>id==='starter'?'Starter 词库':store.books[id]?.name||'新词库';
   const activeBooks=()=>Object.entries(store.books||{}).filter(([,book])=>!book.deletedAt);
@@ -65,6 +121,14 @@
       ?`正在查看“${bookName(viewedBookId)}”；今日听写仍使用“${bookName(selected)}”。`:'';
     document.querySelector('#saveImportedWords').disabled=selected==='starter';
     document.querySelector('#saveScannedWords').disabled=selected==='starter';
+    const showSupplement=isBeeBook(store)&&!store.books[selected]?.deletedAt;
+    supplement.classList.toggle('hidden',!showSupplement);
+    if(showSupplement){
+      const existing=new Set(store.books[selected].words.map(item=>norm(item.text)));
+      const pending=eaglesBonus.filter(word=>!existing.has(norm(word))).length;
+      supplement.disabled=!pending;
+      supplement.textContent=pending?`追加 Eagles 新版 Bonus（${pending} 个）`:'Eagles 新版 Bonus 已齐全';
+    }
     document.querySelector('#importTargetHint').textContent=selected==='starter'
       ?'请先在“管理词库”中增加一个自定义词库，再回来录入单词。'
       :`导入目标：${bookName(selected)}`;
