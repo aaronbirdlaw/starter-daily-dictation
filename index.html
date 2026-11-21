@@ -56,7 +56,18 @@
   .bee-ratio-slider:focus-visible{outline:3px solid var(--orange);outline-offset:2px}
   .bee-ratio-scale{display:flex;justify-content:space-between;font-size:14px;color:#62736a}
   #beeRatioHint{font-size:14px;line-height:1.7;color:#62736a;margin:8px 0}
-</style>
+    .reward-wardrobe{margin:18px 0;padding:17px;background:#fffaf9;border:1px solid #ebdae6;border-radius:18px}
+    .reward-wardrobe summary{cursor:pointer;font-weight:800;color:#643c62}
+    .wardrobe-preview{margin-top:14px;border-radius:16px;background:radial-gradient(ellipse at top,#fff3dc,#f1e4f5);text-align:center}
+    #reward-avatar{display:block;width:min(100%,320px);height:auto;margin:auto;touch-action:pan-y;cursor:grab}
+    .wardrobe-turn{display:flex;justify-content:center;align-items:center;gap:8px;padding:0 8px 12px;font-size:12px}
+    .wardrobe-turn button,.wardrobe-options button{color:#643c62;background:#fff;border:1px solid #e5d3e3;border-radius:12px;padding:9px;min-height:44px}
+    .wardrobe-options{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+    .wardrobe-options button{display:grid;justify-items:center;gap:5px;cursor:pointer}
+    .wardrobe-options button:disabled{opacity:.6;cursor:default}
+    .wardrobe-options i{width:18px;height:18px;border-radius:50%}
+    #reward-message{color:#215a41;font-weight:700}
+  </style>
 </head>
 <body>
 <main class="shell">
@@ -68,6 +79,16 @@
       <section id="reviewBacklog" class="notice hidden" aria-live="polite"><p id="backlogText"></p><button id="continueReview" class="save-settings hidden">继续复习 5 个</button></section>
       <section class="card"><div class="section-head"><div><p class="eyebrow">TODAY'S SET</p><h2>今日听写</h2></div><button class="play-all" id="playAll">▶ 顺序播放</button></div><div id="rows"></div></section>
       <section class="complete hidden" id="complete"><p class="eyebrow">WELL DONE</p><h2>今日任务已完成！</h2><p>系统已按照记忆曲线安排下一次复习。</p></section>
+      <details id="wardrobe" class="reward-wardrobe">
+        <summary>我的试衣间 · <span id="reward-points">0 积分</span></summary>
+        <div class="wardrobe-preview">
+          <canvas id="reward-avatar" width="480" height="480" aria-label="可旋转的 3D 卡通女孩，默认穿基础打底装"></canvas>
+          <div class="wardrobe-turn"><button type="button" data-turn="-30">← 左转</button><span>左右拖动角色</span><button type="button" data-turn="30">右转 →</button></div>
+        </div>
+        <p>完成当天全部听写得 5 分，每天限一次。测试版积分和衣柜只保存在当前浏览器。</p>
+        <p id="reward-message" role="status"></p>
+        <div id="reward-shop"></div>
+      </details>
     </section>
     <section id="wordsView" class="panel hidden">
       <div class="page-title"><p class="eyebrow">WORD BANK</p><h1 id="bookTitle">完整词库</h1><p>共 <span id="wordTotal"></span> 个词条；已学习的会被划掉。每个词库独立安排新词和复习；切回其他词库时会接着复习。</p></div>
@@ -429,6 +450,7 @@ document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>tab(b.dataset.t
   })();
 </script>
 <script src="wordbooks.js"></script>
+<script src="wardrobe.js"></script>
 </body>
 </html>
 
