@@ -69,7 +69,7 @@
   function draw(){
     const ctx=canvas.getContext('2d');if(!ctx)return;
     const s=read(),color=(group,fallback)=>items.find(x=>x[0]===s.wear[group])?.[4]||fallback;
-    const skin='#ffd8bf',hair='#604063',shadowHair='#50365a',top=color('top','#f8d8ec'),pants=color('pants','#a49bd5');
+    const skin='#ffddc5',hair='#42312a',shadowHair='#352722',top=color('top','#29292d'),pants=color('pants','#494543');
     const faces=[],cos=Math.cos(angle),sin=Math.sin(angle);
     const project=([x,y,z])=>[x*cos+z*sin,y,z*cos-x*sin];
     function line(points,fill,width){
@@ -88,63 +88,97 @@
         faces.push({p,z:p.reduce((v,q)=>v+q[2],0)/4,fill:'rgb('+rgb.map(v=>Math.min(255,Math.round(v*light))).join(',')+')'});
       }
     }
-    const bottom=s.wear.pants,skirt=bottom==='pleats'||bottom==='bubble';
-    const bareLower=skirt||bottom==='shorts';
-    for(const d of [-1,1]){
-      shape(d*77,139,-28,29,60,27,shadowHair);
-      shape(d*83,176,-28,22,46,23,hair);shape(d*85,113,-24,18,12,20,'#c48cbb');
-      shape(d*23,329,0,19,44,21,bareLower?skin:pants);
-      if(bottom==='shorts')shape(d*23,307,2,23,26,25,pants);
-      if(bottom==='denim')shape(d*23,352,4,21,8,23,'#98b5db');
-      shape(d*24,373,13,24,15,31,'#f3eafb');shape(d*24,376,31,20,8,14,'#dcadd6');
-      shape(d*51,263,4,13,31,14,skin);shape(d*53,246,3,17,s.wear.top==='hoodie'?40:24,19,top);
-    }
-    if(skirt){
-      shape(0,308,0,bottom==='pleats'?55:50,bottom==='pleats'?30:33,38,pants);
-      if(bottom==='pleats')for(let i=0;i<12;i++){
-        const a=i*Math.PI/6;
-        line([[32*Math.cos(a),294,24*Math.sin(a)],[54*Math.cos(a),312,38*Math.sin(a)],[43*Math.cos(a),328,31*Math.sin(a)]],'#b96591',1.6);
+    // Model the reference's long waves using tapered, continuous 3D locks.
+    function lock(rows,hex){
+      const rgb=hex.slice(1).match(/../g).map(n=>parseInt(n,16));
+      const lerp=(a,b,t)=>a.map((v,k)=>v+(b[k]-v)*t);
+      const ring=(row,a)=>project([row[0]+row[3]*Math.cos(a),row[1],row[2]+row[4]*Math.sin(a)]);
+      for(let i=1;i<rows.length;i++)for(let step=0;step<4;step++){
+        const from=lerp(rows[i-1],rows[i],step/4),to=lerp(rows[i-1],rows[i],(step+1)/4);
+        for(let j=0;j<24;j++){
+          const a=j*Math.PI/12,b=a+Math.PI/12,m=(a+b)/2;
+          const [nx,,nz]=project([Math.cos(m),0,Math.sin(m)]);
+          if(nz<=0)continue;
+          const p=[ring(from,a),ring(from,b),ring(to,b),ring(to,a)];
+          const light=.83+.19*(nz-.45*nx);
+          faces.push({p,z:p.reduce((v,q)=>v+q[2],0)/4,fill:'rgb('+rgb.map(v=>Math.min(255,Math.round(v*light))).join(',')+')'});
+        }
       }
     }
-    shape(0,266,0,43,47,29,top);shape(0,224,0,19,20,19,skin);
-    shape(0,235,22,22,10,10,'#fff4fb');shape(0,259,28,5,5,4,'#e09bc3');
+    const bottom=s.wear.pants,skirt=!bottom||bottom==='pleats'||bottom==='bubble';
+    const baseTop=!s.wear.top;
+    for(const d of [-1,1]){
+      lock([[d*61,110,-20,23,35],[d*65,172,-30,19,30],[d*70,221,-31,17,23],[d*61,259,-37,13,17],[d*66,283,-38,2,3]],hair);
+      for(let k=0;k<3;k++){
+        const x=d*(12+k*18),z=-62+k*4,y=292-k*5+d*4;
+        lock([[x,117,z,18,17],[x+d*7,179,z,17,19],[x-d*3,222,z-4,16,19],[x+d*4,262,z-8,14,14],[x+d*1,y,z-6,2,3]],k%2?hair:shadowHair);
+      }
+      lock([[d*55,111,24,17,26],[d*66,163,20,13,17],[d*57,207,26,12,12],[d*47,241,29,8,9],[d*52,254,32,1,2]],'#49362c');
+      lock([[d*23,316,0,17,18],[d*23,358,1,15,16],[d*24,391,0,13,15],[d*24,430,0,9,10]],!bottom?'#393130':skirt||bottom==='shorts'?skin:pants);
+      if(bottom==='shorts')shape(d*23,333,2,21,26,22,pants);
+      if(bottom==='denim')shape(d*24,416,3,12,7,14,'#98b5db');
+      shape(d*24,434,11,16,12,28,'#5d4033');shape(d*24,440,12,17,6,29,'#3c2a24');
+      shape(d*24,430,27,13,4,8,'#795744');
+      shape(d*70,316,5,10,14,9,skin);
+      if(baseTop||s.wear.top==='hoodie'){
+        lock([[d*42,220,0,12,19],[d*49,243,0,17,19],[d*59,270,1,16,17],[d*69,301,4,12,13],[d*70,307,4,10,10]],top);
+        shape(d*70,303,4,12,8,12,top);
+      }else{shape(d*56,271,4,12,31,12,skin);shape(d*47,237,3,16,21,18,top)}
+    }
+    if(!skirt)shape(0,314,0,39,23,24,pants);
+    if(skirt){
+      if(bottom==='bubble')shape(0,327,0,47,35,32,pants);
+      else lock([[0,290,0,35,24],[0,321,0,43,28],[0,354,0,49,32],[0,355,0,46,31]],pants);
+      if(bottom!=='bubble')for(let i=0;i<12;i++){
+        const a=i*Math.PI/6;
+        line([[40*Math.cos(a),307,27*Math.sin(a)],[49*Math.cos(a),351,33*Math.sin(a)]],bottom?'#b96591':'#3e3a39',1.3);
+      }
+    }
+    lock([[0,207,0,18,15],[0,222,0,43,25],[0,253,0,36,26],[0,291,0,41,26],[0,301,0,40,25]],top);
+    shape(0,205,0,16,18,17,skin);
+    if(baseTop)lock([[0,198,0,19,18],[0,212,0,20,18],[0,219,0,23,21]],'#252428');
+    else if(s.wear.top!=='sailor')shape(0,224,20,21,8,8,'#fff4fb');
     if(s.wear.top==='hoodie'){shape(0,236,-17,33,26,23,top);shape(0,278,27,22,9,5,'#b5bee8')}
     if(s.wear.top==='sailor'){shape(0,239,21,31,11,11,'#71628b');shape(0,252,29,8,13,5,'#d36984')}
-    shape(0,134,-17,85,95,68,hair);shape(0,148,10,75,76,64,skin);
-    shape(-24,79,36,49,28,41,hair);shape(25,83,34,44,24,40,hair);
-    shape(-43,103,44,27,23,33,hair);shape(43,104,35,27,25,35,hair);
+    shape(0,118,-13,72,80,66,hair);shape(0,134,9,62,65,56,skin);
+    for(const d of [-1,1])shape(d*59,140,14,10,14,11,skin);
+    shape(-23,79,34,42,24,31,hair);shape(25,81,31,34,24,30,hair);
+    lock([[12,63,47,16,17],[0,84,58,23,13],[-22,104,51,22,12],[-43,121,40,2,3]],hair);
+    lock([[19,64,42,15,16],[35,87,51,17,12],[51,109,41,15,12],[60,132,30,2,3]],'#49372d');
     for(const d of [-1,1]){
-      shape(d*28,149,69,17,21,8,'#4a294e');
-      shape(d*28,151,74,13,17,6,'#fff6fb');
-      shape(d*28,151,79,10,15,4,'#915b9b');
-      shape(d*28,148,82,6,10,2,'#4c304f');
-      shape(d*28-4,143,84,4,5,2,'#ffffff');shape(d*28+4,156,84,2,2,1,'#ffffff');
-      shape(d*31,127,69,12,2,3,hair);
-      shape(d*46,173,61,12,6,3,'#ffaeb8');
+      shape(d*23,133,60,14,13,6,'#493127');
+      shape(d*23,136,64,13,11,5,'#fff8ec');
+      shape(d*23,135,68,9,10,3,'#956346');
+      shape(d*23,134,70,5,7,2,'#4a3128');
+      shape(d*23-3,131,71,3,3,1.5,'#ffffff');shape(d*23+3,139,72,1.5,1.5,1,'#ffffff');
+      shape(d*25,116,61,10,1.8,2,hair);
+      shape(d*37,153,56,9,4,2,'#f5afa2');
     }
-    shape(0,169,74,5,5,4,skin);shape(0,185,68,8,4,3,'#bd6b86');
+    shape(0,148,66,4,4,5,skin);
+    line([[-7,165,60],[0,167,62],[7,165,60]],'#a96759',1.5);
     const head=color('head',null);
     if(head&&s.wear.head.startsWith('clip')){
-      line([[38,89,68],[63,102,58]],head,8);
-      shape(40,90,68,6,6,4,head);
+      line([[36,85,66],[54,98,52]],head,7);
+      shape(38,87,66,5,5,4,head);
     }else if(head){shape(32,49,40,18,12,10,head);shape(61,44,40,18,12,10,head);shape(47,48,48,8,8,8,head)}
-    const glasses=color('glasses',null);
+    const glasses=color('glasses','#967b67'),frameWidth=s.wear.glasses?3.8:1.6;
     if(glasses){
       for(const d of [-1,1]){
         const count=s.wear.glasses==='square'?4:s.wear.glasses==='star'?10:24;
         const points=Array.from({length:count+1},(_,i)=>{
           const a=i*2*Math.PI/count-(count===4?Math.PI/4:Math.PI/2);
-          const radius=count===4?28:count===10&&i%2?15:24;
-          return [d*28+radius*Math.cos(a),151+radius*Math.sin(a),88];
+          const radius=count===4?25:count===10&&i%2?12:19;
+          const x=d*23+radius*Math.cos(a);
+          return [x,135+radius*Math.sin(a),76-Math.abs(x)*.18];
         });
         // Draw each 3D edge separately for correct occlusion when seen from behind.
-        for(let i=1;i<points.length;i++)line([points[i-1],points[i]],glasses,3.8);
-        line([[d*50,149,88],[d*72,149,18]],glasses,3.5);
+        for(let i=1;i<points.length;i++)line([points[i-1],points[i]],glasses,frameWidth);
+        line([[d*42,133,68],[d*64,137,17]],glasses,frameWidth);
       }
-      line([[-8,151,88],[0,148,89],[8,151,88]],glasses,3);
+      line([[-5,135,75],[0,132,76],[5,135,75]],glasses,frameWidth);
     }
     ctx.clearRect(0,0,480,480);
-    ctx.fillStyle='#96799a35';ctx.beginPath();ctx.ellipse(240,409,97,14,0,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#96799a35';ctx.beginPath();ctx.ellipse(240,462,85,11,0,0,Math.PI*2);ctx.fill();
     faces.sort((a,b)=>a.z-b.z);
     for(const {p,fill,width} of faces){
       ctx.beginPath();p.forEach(([x,y],i)=>ctx[i?'lineTo':'moveTo'](240+x*1.10,14+y));
