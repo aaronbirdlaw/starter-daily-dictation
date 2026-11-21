@@ -67,6 +67,8 @@
     .wardrobe-options button:disabled{opacity:.6;cursor:default}
     .wardrobe-options i{width:18px;height:18px;border-radius:50%}
     #reward-message{color:#215a41;font-weight:700}
+    #reward-redeem{display:block;width:100%;min-height:46px;margin:12px 0;padding:10px 16px;border:0;border-radius:13px;background:#8050a0;color:#fff;font-weight:800;cursor:pointer}
+    #reward-shop{scroll-margin-top:16px}
   </style>
 </head>
 <body>
@@ -85,9 +87,10 @@
           <canvas id="reward-avatar" width="480" height="480" aria-label="可旋转的 3D 卡通女孩，默认穿基础打底装"></canvas>
           <div class="wardrobe-turn"><button type="button" data-turn="-30">← 左转</button><span>左右拖动角色</span><button type="button" data-turn="30">右转 →</button></div>
         </div>
-        <p>完成当天全部听写得 5 分，每天限一次。测试版积分和衣柜只保存在当前浏览器。</p>
+        <button id="reward-redeem" type="button" aria-controls="reward-shop">✦ 兑换衣服</button>
+        <p>完成当天全部听写得 5 分，每天限一次。积分和衣柜只保存在当前浏览器。<span id="reward-test-note" hidden> 测试版初始赠送 100 积分，可直接试换装。</span></p>
         <p id="reward-message" role="status"></p>
-        <div id="reward-shop"></div>
+        <div id="reward-shop" tabindex="-1"></div>
       </details>
     </section>
     <section id="wordsView" class="panel hidden">
@@ -450,7 +453,7 @@ document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>tab(b.dataset.t
   })();
 </script>
 <script src="wordbooks.js"></script>
-<script src="wardrobe.js"></script>
+<script src="wardrobe.js?v=3"></script>
 </body>
 </html>
 
