@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#f8edda">
+<title>Audrey’s Secret Garden</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#f8edda;color:#543820;font-family:ui-rounded,"PingFang SC",system-ui,sans-serif}main{width:min(100%,460px);margin:0 auto;padding:12px 12px 20px}.garden{overflow:hidden;border:2px solid #694525;border-radius:29px;background:#fff9e9;box-shadow:0 8px 22px #805c2918}.scene{position:relative;background:#bce9e7}h1{position:absolute;inset:13px 0 auto;margin:0;text-align:center;font-size:clamp(24px,7vw,34px);font-weight:900;letter-spacing:-.045em;z-index:1}.scene-controls{position:absolute;inset:56px 8px auto;z-index:2;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:8px;pointer-events:none}.practice-badge,.sound{display:inline-flex;align-items:center;gap:5px;background:#fff9e9;border:1px solid #f1dfb6;border-radius:30px;color:#543820;min-height:44px;padding:0 10px;font-size:13px;white-space:nowrap}.practice-badge{grid-column:2;min-height:36px;font-weight:750}.practice-badge svg{width:16px;height:22px;color:#eb82a5;flex:none}.sound{grid-column:3;justify-self:end;pointer-events:auto}.scene>svg{display:block;width:100%;height:auto;aspect-ratio:400/430}.panel{padding:11px 9px 12px;min-height:116px}.row{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}.reward{border:2px solid #a8a598;border-radius:17px;background:#ebebe4;color:#50493d;position:relative;padding:5px 2px 6px;font-size:16px;font-weight:850;line-height:1.2}.reward svg{display:block;width:54px;height:43px;margin:0 auto 2px}.reward small{display:block;font-size:12px;margin-top:4px}.reward.locked svg{filter:grayscale(1);opacity:.7}.reward.ready[data-reward=flower]{background:#ffd8e1;border-color:#d97695}.reward.ready[data-reward=bird]{background:#d5f3ff;border-color:#74a9ba}.reward.ready[data-reward=house]{background:#fbe7c4;border-color:#c69f61}.reward.grown{background:#e8f0d2;border-color:#89a259}.badge{position:absolute;right:5px;top:4px;font-size:13px}.controls{margin-top:14px}.summary{display:flex;align-items:center;justify-content:space-between;gap:6px;margin-bottom:8px;font-size:14px}.summary strong{font-size:16px}.controls button,.cancel{border:1px solid #ae926d;border-radius:12px;background:#fff9e9;padding:10px;color:#543820;font-weight:750;min-height:44px}.controls #complete{background:#d8e9b2;border-color:#788c53}.controls .row{grid-template-columns:1.35fr 1fr .75fr}.status{font-size:13px;margin:8px 0 0;min-height:20px}.picker{text-align:center}.picker strong{display:block;margin-bottom:5px}.swatch svg{display:block;margin:auto}.swatch{border:2px solid #694525;border-radius:50%;width:45px;height:45px;margin:0 4px;vertical-align:middle}.cancel{margin-left:5px}.visual{pointer-events:none}.defs{position:absolute;width:0;height:0}[hidden]{display:none!important}button{cursor:pointer;font-family:inherit}button:disabled{cursor:default}button:focus-visible{outline:3px solid #583f79;outline-offset:2px}
+.reward-flight,.reward-spark,.reward-ring{position:fixed;z-index:20;pointer-events:none;top:0;left:0;will-change:transform,opacity}.reward-flight{width:156px;height:156px;overflow:visible;filter:drop-shadow(0 6px 8px #65432334)}.reward-spark{width:24px;height:24px}.reward-ring{width:100px;height:100px;border:3px solid #fff9cc;border-radius:50%;box-shadow:0 0 18px #fff4a4}.reward-flight .petal{transform-box:view-box;transform-origin:50% 50%}
+.back-to-practice{display:inline-flex;align-items:center;min-height:44px;padding:0 12px;border:1px solid #ae926d;border-radius:12px;background:#fff9e9;color:#543820;font-weight:750;text-decoration:none}
+#colors{display:grid;grid-template-columns:repeat(6,minmax(44px,1fr));gap:5px;max-width:350px;margin:auto}
+#colors .swatch{width:100%;height:auto;min-height:44px;aspect-ratio:1;margin:0;padding:4px}
+#colors .cancel{grid-column:1/-1;justify-self:center;margin:0}
+@media(max-width:345px){#colors{grid-template-columns:repeat(3,minmax(44px,1fr));max-width:185px}}
+.garden-pages{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;overscroll-behavior-x:contain}
+.garden-pages::-webkit-scrollbar{display:none}
+.garden-pages.is-busy{overflow-x:hidden}
+.garden-page{display:block;flex:0 0 100%;width:100%;min-width:0;aspect-ratio:400/430;scroll-snap-align:start;scroll-snap-stop:always}
+.area-nav{display:grid;grid-template-columns:44px minmax(0,1fr) 44px;align-items:center;gap:8px;padding:4px 10px;background:#fff9e9;text-align:center;border-bottom:1px solid #f1dfb6}
+.area-nav button{min-height:44px;border:1px solid #e5d0a4;border-radius:18px;background:#fff4d7;color:#543820;font-size:26px;line-height:1}
+.area-nav button:disabled{opacity:.35}
+.area-nav strong,.area-nav small{display:block}
+.area-nav small{font-size:12px;color:#755b3e}
+</style>
+</head>
+<body>
+<main>
+<svg class="defs" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><defs>
+<g id="head" stroke="#944d51" stroke-width="2.2" stroke-linejoin="round"><path fill="currentColor" d="M0-8C-12-22-25-8-16 1C-33 7-22 25-8 18C-5 33 14 29 14 15C30 16 34-4 18-8C16-24 1-24 0-8Z"/><circle cy="5" cx="4" r="6.5" fill="#ffce4f" stroke="none"/></g>
+<g id="plant"><path d="M0 0V-29" stroke="#4d813c" stroke-width="3.8" stroke-linecap="round"/><path d="M0-5Q-19-4-21-17Q-7-20 0-5M0-7Q17-7 20-19Q6-20 0-7" fill="#64983d"/><use href="#head" transform="translate(-3 -34) scale(.72)"/></g>
+<g id="bluebird" stroke="#634331" stroke-width="2" stroke-linejoin="round"><path d="M14 10l-4 5m-6-5-2 5" fill="none" stroke-linecap="round"/><path d="M-18 1l-8-4 7-4" fill="#f0a33c"/><path d="M-20-4C-19-21 8-21 14-7Q19-10 27-14Q30-6 21 1C21 11 8 16-6 13Q-21 10-20-4Z" fill="var(--bird-color, #84ceed)"/><path d="M-18 3Q-9-6 11 4Q16 13-3 12Q-13 12-18 3" stroke="none" fill="#fff3d3"/><path d="M4 1Q12 1 17-5" fill="none" stroke-linecap="round"/><circle cx="-12" cy="-6" r="2.2" fill="#553825" stroke="none"/><circle cx="-7" cy="0" r="3" fill="#f29da5" stroke="none"/></g>
+<path id="flying-wing" d="M1 4Q6-14 27-16Q26-1 13 7Q5 10 1 4Z" fill="var(--wing-color, #64b8df)" stroke="#634331" stroke-width="2"/>
+<g id="cottage" stroke="#734433" stroke-width="2.2" stroke-linejoin="round"><path d="M15-25v-16h11v16" fill="#f5c496"/><path d="M-29-23V0H28v-23L0-45Z" fill="#fff0c9"/><path d="M-34-20Q-40-22-32-29L-4-52Q0-55 5-51l29 24q6 7-1 8L0-44Z" fill="var(--roof-color, #f28290)"/><path d="M7 0v-13a8 8 0 0 1 16 0V0Z" fill="#c48558"/><circle cx="-14" cy="-17" r="8" fill="#ffe16d"/><path d="M-22-17h16m-8-8v16" stroke="#bd8143"/></g>
+<path id="star" d="M0-10Q2-2 10 0Q2 2 0 10Q-2 2-10 0Q-2-2 0-10Z" fill="#fff8ba" stroke="#e6ad34" stroke-width="1.3"/>
+</defs></svg>
+<section class="garden" aria-label="Audrey’s Secret Garden">
+<div class="scene"><h1>Audrey’s Secret Garden</h1><div class="scene-controls">
+  <div class="practice-badge"><svg viewBox="-28 -58 56 62" aria-hidden="true"><use href="#plant"/></svg><span id="practice-days">0 practice days</span></div>
+  <button class="sound" id="sound" aria-pressed="true">♪ Sound on</button>
+</div>
+<div class="garden-pages" id="garden-pages" tabindex="0" aria-label="Garden scenes"></div>
+</div>
+<div class="area-nav" id="area-nav" hidden>
+  <button type="button" id="previous-area" aria-label="Previous garden area">‹</button>
+  <div aria-live="polite"><strong id="area-name"></strong><small id="area-count"></small></div>
+  <button type="button" id="next-area" aria-label="Next garden area">›</button>
+</div>
+<template id="garden-scene">
+<svg class="garden-page" viewBox="0 0 400 430" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+<rect class="sky" width="400" height="430" fill="#bce9e7"/><circle class="sun" cx="341" cy="91" r="24" fill="#ffe38b"/>
+<path d="M155 101q11-15 23-5 13-4 17 7 2 8-16 8h-25q-11-2 1-10m68 19q8-13 20-6 11-7 17 5 17 0 14 9h-52q-13-3 1-8" fill="#f8fff8"/>
+<path class="distant-hills" d="M0 152Q44 113 103 135T213 143Q270 114 320 135T400 133V430H0Z" fill="#8dbb72"/>
+<path class="lawn" d="M0 155Q86 134 177 155Q255 170 314 151Q362 139 400 144V430H0Z" fill="#cee781"/>
+<path class="shrub-light" d="M0 380Q14 353 38 369Q60 373 66 391Q85 379 112 407Q151 399 164 430H0ZM400 362Q377 354 356 379Q338 374 322 395Q292 385 268 430H400Z" fill="#96bd58"/>
+<path class="shrub-dark" d="M0 406Q17 381 42 401Q60 392 83 414Q104 406 126 430H0ZM400 395Q377 386 360 408Q335 396 312 430H400Z" fill="#7eab4b"/>
+<g class="tree"><path d="M-8 74Q43 97 101 107M27 89Q40 82 56 71M52 97Q60 112 76 119" fill="none" stroke="#ab773f" stroke-width="6" stroke-linecap="round"/>
+<path d="M24 87Q15 73 5 78q4 12 19 9M76 102q12-18 27-13-4 15-27 13M62 111q-11 1-14 13 13-1 14-13" fill="#76ac4d"/>
+<g class="tree-blooms" style="color:#ef9eb5"><use href="#head" transform="translate(39 83) scale(.41)"/><use href="#head" transform="translate(60 73) scale(.45)"/><use href="#head" transform="translate(72 111) scale(.42)"/></g>
+<g class="side-branch" visibility="hidden" stroke="#ab773f" stroke-width="5" stroke-linecap="round" fill="none">
+<path d="M37 92Q87 112 185 137M136 125Q151 123 165 116"/>
+<path d="M164 116q8-12 18-8-4 12-18 8M112 118q10 0 15 11-13 2-15-11" fill="#76ac4d" stroke="none"/>
+</g></g>
+<g class="terrain-details"></g><g class="grass"></g><g class="planted"></g><g class="milestones"></g>
+</svg></template>
+<div class="panel"><div class="row" id="rewards"></div>
+<div class="picker" id="picker" hidden><strong>Choose a color</strong><div id="colors"></div></div></div>
+</section>
+<section class="controls" aria-label="Garden summary">
+<div class="summary"><a class="back-to-practice" href="../">Back to practice</a><span id="flower-count"></span></div>
+<p class="status" id="status" role="status"></p>
+</section>
+</main>
+<div id="effects" aria-hidden="true"></div>
+<script src="garden.js?v=4"></script>
+</body>
+</html>
