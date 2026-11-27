@@ -22,6 +22,29 @@
 .area-nav button:disabled{opacity:.35}
 .area-nav strong,.area-nav small{display:block}
 .area-nav small{font-size:12px;color:#755b3e}
+.reward.ready[data-reward=butterfly]{background:#f0defa;border-color:#ab7ebc}
+.reward.ready[data-reward=sun],.reward.active[data-reward=sun]{background:#fff0b8;border-color:#d3a348}
+.reward.ready[data-reward=rainbow],.reward.active[data-reward=rainbow]{background:#e2f5ee;border-color:#7aa997}
+.flutter{animation:flutter 2.4s ease-in-out infinite;transform-origin:0 0}
+.flutter:nth-child(even),.butterflies>g:nth-child(even) .flutter{animation-delay:-.9s}
+@keyframes flutter{0%,100%{transform:translateY(0) rotate(-7deg) scaleX(1)}24%{transform:translateY(-8px) rotate(5deg) scaleX(.65)}50%{transform:translateY(-13px) rotate(11deg) scaleX(1)}76%{transform:translateY(-7px) rotate(2deg) scaleX(.7)}}
+.sun-rays{animation:sun-turn 24s linear infinite;transform-origin:0 0}
+.rainbow-drift{animation:rainbow-drift 5s ease-in-out infinite}
+.rainbow-sparkle{animation:rainbow-sparkle 4s ease-in-out infinite;opacity:0}
+.rainbow-sparkle:last-child{animation-delay:1.5s}
+.perched-bird{animation:bird-perch 4.6s ease-in-out infinite;transform-origin:0 13px}
+.bird-perch:nth-child(even) .perched-bird{animation-delay:-2.1s}
+@keyframes sun-turn{to{transform:rotate(360deg)}}
+@keyframes rainbow-drift{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
+@keyframes rainbow-sparkle{0%,55%,100%{opacity:0}25%{opacity:.92}}
+@keyframes bird-perch{
+  0%,29%,72%,100%{transform:translateY(0) rotate(0)}
+  36%{transform:scaleY(.91) rotate(-8deg)}
+  46%{transform:translateY(-18px) rotate(8deg)}
+  55%{transform:translateY(0) scaleY(.94)}
+  63%{transform:translateY(-9px) rotate(-5deg)}
+}
+@media(prefers-reduced-motion:reduce){.flutter,.sun-rays,.rainbow-drift,.rainbow-sparkle,.perched-bird{animation:none}}
 </style>
 </head>
 <body>
@@ -32,6 +55,30 @@
 <g id="bluebird" stroke="#634331" stroke-width="2" stroke-linejoin="round"><path d="M14 10l-4 5m-6-5-2 5" fill="none" stroke-linecap="round"/><path d="M-18 1l-8-4 7-4" fill="#f0a33c"/><path d="M-20-4C-19-21 8-21 14-7Q19-10 27-14Q30-6 21 1C21 11 8 16-6 13Q-21 10-20-4Z" fill="var(--bird-color, #84ceed)"/><path d="M-18 3Q-9-6 11 4Q16 13-3 12Q-13 12-18 3" stroke="none" fill="#fff3d3"/><path d="M4 1Q12 1 17-5" fill="none" stroke-linecap="round"/><circle cx="-12" cy="-6" r="2.2" fill="#553825" stroke="none"/><circle cx="-7" cy="0" r="3" fill="#f29da5" stroke="none"/></g>
 <path id="flying-wing" d="M1 4Q6-14 27-16Q26-1 13 7Q5 10 1 4Z" fill="var(--wing-color, #64b8df)" stroke="#634331" stroke-width="2"/>
 <g id="cottage" stroke="#734433" stroke-width="2.2" stroke-linejoin="round"><path d="M15-25v-16h11v16" fill="#f5c496"/><path d="M-29-23V0H28v-23L0-45Z" fill="#fff0c9"/><path d="M-34-20Q-40-22-32-29L-4-52Q0-55 5-51l29 24q6 7-1 8L0-44Z" fill="var(--roof-color, #f28290)"/><path d="M7 0v-13a8 8 0 0 1 16 0V0Z" fill="#c48558"/><circle cx="-14" cy="-17" r="8" fill="#ffe16d"/><path d="M-22-17h16m-8-8v16" stroke="#bd8143"/></g>
+<g id="butterfly" stroke="#73445a" stroke-width="1.8" stroke-linejoin="round">
+<path d="M-2 1C-7-5-20-11-23-3C-28 8-19 18-11 15Q-5 13 0 6Q5 13 11 15C19 18 28 8 23-3C20-11 7-5 2 1Z" fill="var(--wing-color,#a47ecb)"/>
+<path d="M-1 5C-8 7-25 1-27-9C-31-25-13-26-3-11L0-5L3-11C13-26 31-25 27-9C25 1 8 7 1 5Z" fill="currentColor"/>
+<path d="M-1-9q-2-8-7-10M1-9q2-8 7-10" fill="none" stroke-linecap="round"/>
+<path d="M0-8V12" stroke="#664338" stroke-width="3.5" stroke-linecap="round"/>
+<g fill="#fff4d9" stroke="none"><circle cx="-17" cy="-11" r="3.2"/><circle cx="17" cy="-11" r="3.2"/><circle cx="-11" cy="-4" r="1.6"/><circle cx="11" cy="-4" r="1.6"/></g>
+</g>
+<g id="sun"><use href="#sun-glow"/><use href="#sun-face"/></g>
+<path id="sun-glow" d="M0-30v5m0 50v5M-30 0h5m50 0h5M-21-21l4 4m34 34 4 4m0-42-4 4m-34 34-4 4" fill="none" stroke="#da9a43" stroke-width="2.8" stroke-linecap="round"/>
+<g id="sun-face">
+<circle r="20" fill="#ffdf78" stroke="#b77a3d" stroke-width="1.8"/>
+<path d="M-8-3v1m16-1v1m-11 5q3 4 6 0" fill="none" stroke="#694525" stroke-width="1.65" stroke-linecap="round"/>
+<circle cx="-12" cy="4" r="2.8" fill="#f2a080"/><circle cx="12" cy="4" r="2.8" fill="#f2a080"/>
+</g>
+<g id="rainbow" fill="none" stroke-linecap="round">
+<path d="M-50 15A50 46 0 0 1 50 15" stroke="#c17f84" stroke-width="8"/>
+<path d="M-50 15A50 46 0 0 1 50 15" stroke="#f5a5a3" stroke-width="5"/>
+<path d="M-44 15A44 40 0 0 1 44 15" stroke="#ffc091" stroke-width="6"/>
+<path d="M-38 15A38 34 0 0 1 38 15" stroke="#ffe291" stroke-width="6"/>
+<path d="M-32 15A32 28 0 0 1 32 15" stroke="#a3cf96" stroke-width="6"/>
+<path d="M-26 15A26 22 0 0 1 26 15" stroke="#99bddf" stroke-width="6"/>
+<path d="M-20 15A20 16 0 0 1 20 15" stroke="#c3a4df" stroke-width="6"/>
+<path d="M-58 21Q-61 15-53 13Q-49 5-42 11Q-34 10-32 17Q-30 22-38 22ZM35 23Q29 18 37 15Q43 6 49 13Q58 11 60 18Q62 23 55 24Z" fill="#fff9ed" stroke="#91afa9" stroke-width="1.35" stroke-linejoin="round"/>
+</g>
 <path id="star" d="M0-10Q2-2 10 0Q2 2 0 10Q-2 2-10 0Q-2-2 0-10Z" fill="#fff8ba" stroke="#e6ad34" stroke-width="1.3"/>
 </defs></svg>
 <section class="garden" aria-label="Audrey’s Secret Garden">
@@ -48,8 +95,9 @@
 </div>
 <template id="garden-scene">
 <svg class="garden-page" viewBox="0 0 400 430" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
-<rect class="sky" width="400" height="430" fill="#bce9e7"/><circle class="sun" cx="341" cy="91" r="24" fill="#ffe38b"/>
+<rect class="sky" width="400" height="430" fill="#bce9e7"/>
 <path d="M155 101q11-15 23-5 13-4 17 7 2 8-16 8h-25q-11-2 1-10m68 19q8-13 20-6 11-7 17 5 17 0 14 9h-52q-13-3 1-8" fill="#f8fff8"/>
+<g class="weather"></g>
 <path class="distant-hills" d="M0 152Q44 113 103 135T213 143Q270 114 320 135T400 133V430H0Z" fill="#8dbb72"/>
 <path class="lawn" d="M0 155Q86 134 177 155Q255 170 314 151Q362 139 400 144V430H0Z" fill="#cee781"/>
 <path class="shrub-light" d="M0 380Q14 353 38 369Q60 373 66 391Q85 379 112 407Q151 399 164 430H0ZM400 362Q377 354 356 379Q338 374 322 395Q292 385 268 430H400Z" fill="#96bd58"/>
@@ -61,7 +109,7 @@
 <path d="M37 92Q87 112 185 137M136 125Q151 123 165 116"/>
 <path d="M164 116q8-12 18-8-4 12-18 8M112 118q10 0 15 11-13 2-15-11" fill="#76ac4d" stroke="none"/>
 </g></g>
-<g class="terrain-details"></g><g class="grass"></g><g class="planted"></g><g class="milestones"></g>
+<g class="terrain-details"></g><g class="grass"></g><g class="planted"></g><g class="milestones"></g><g class="butterflies"></g>
 </svg></template>
 <div class="panel"><div class="row" id="rewards"></div>
 <div class="picker" id="picker" hidden><strong>Choose a color</strong><div id="colors"></div></div></div>
@@ -72,6 +120,6 @@
 </section>
 </main>
 <div id="effects" aria-hidden="true"></div>
-<script src="garden.js?v=4"></script>
+<script src="garden.js?v=8"></script>
 </body>
 </html>
